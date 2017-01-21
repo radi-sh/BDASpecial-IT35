@@ -14,6 +14,9 @@
 
 using namespace std;
 
+//
+// Broadcast Driver Architecture Ç≈íËã`Ç≥ÇÍÇƒÇ¢ÇÈ Property set / Method set
+//
 static const GUID KSPROPSETID_BdaFrequencyFilter = { 0x71985f47, 0x1ca1, 0x11d3,{ 0x9c, 0xc8, 0x0, 0xc0, 0x4f, 0x79, 0x71, 0xe0 } };
 
 enum KSPROPERTY_BDA_FREQUENCY_FILTER {
@@ -89,6 +92,9 @@ enum KSMETHOD_BDA_DEVICE_CONFIGURATION {
 	KSMETHOD_BDA_CREATE_TOPOLOGY,
 };
 
+//
+// IT9135 BDA driver å≈óLÇÃ Property set
+//
 static const GUID KSPROPSETID_IteExtension = { 0xc6efe5eb, 0x855a, 0x4f1b, {0xb7, 0xaa, 0x87, 0xb5, 0xe1, 0xdc, 0x41, 0x13} };
 
 enum KSPROPERTY_ITE_EXTENSION {
@@ -179,8 +185,10 @@ __declspec(dllexport) HRESULT CheckAndInitTuner(IBaseFilter *pTunerDevice, const
 __declspec(dllexport) HRESULT CheckCapture(const WCHAR *szTunerDisplayName, const WCHAR *szTunerFriendlyName,
 	const WCHAR *szCaptureDisplayName, const WCHAR *szCaptureFriendlyName, const WCHAR *szIniFilePath)
 {
+	// Ç±ÇÍÇ™åƒÇŒÇÍÇΩÇ∆Ç¢Ç§Ç±Ç∆ÇÕBondriver_BDA.iniÇÃê›íËÇ™Ç®Ç©ÇµÇ¢
 	OutputDebug(L"CheckCapture called.\n");
 
+	// connect()ÇééÇ›ÇƒÇ‡ñ≥ë Ç»ÇÃÇ≈ E_FAIL Çï‘ÇµÇƒÇ®Ç≠
 	return E_FAIL;
 }
 
