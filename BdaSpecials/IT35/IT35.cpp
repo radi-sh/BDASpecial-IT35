@@ -112,7 +112,7 @@ enum KSPROPERTY_ITE_EXTENSION {
 	KSPROPERTY_ITE_EX_MERCURY_PVBER,					// get/put
 	KSPROPERTY_ITE_EX_MERCURY_REC_LEN,					// get/put
 	KSPROPERTY_ITE_EX_MERCURY_EEPROM,					// get/put
-	KSPROPERTY_ITE_EX_MERCURY_IR,						// get only
+	KSPROPERTY_ITE_EX_MERCURY_IR,						// get only	(ERROR_NOT_SUPORTED)
 	KSPROPERTY_ITE_EX_MERCURY_SIGNAL_STRENGTH,			// get only
 	KSPROPERTY_ITE_EX_CHANNEL_MODULATION = 99,			// get only
 };
@@ -142,9 +142,63 @@ enum KSPROPERTY_PRIVATE_IO_CTL {
 
 HMODULE hMySelf;
 
-static inline HRESULT it35_PutISDBTioCtlproperty(IKsPropertySet *pIKsPropertySet, DWORD dwData)
+static inline HRESULT it35_GetBandWidth(IKsPropertySet *pIKsPropertySet, WORD *pwData)
+{
+	HRESULT hr = S_OK;
+	DWORD dwBytes;
+	BYTE buf[sizeof(*pwData)];
+	if (FAILED(hr = pIKsPropertySet->Get(KSPROPSETID_IteExtension, KSPROPERTY_ITE_EX_BAND_WIDTH, NULL, 0, buf, sizeof(buf), &dwBytes))) {
+		return hr;
+	}
+
+	*pwData = *(WORD*)buf;
+	return hr;
+}
+
+static inline HRESULT it35_PutBandWidth(IKsPropertySet *pIKsPropertySet, WORD wData)
+{
+	return pIKsPropertySet->Set(KSPROPSETID_IteExtension, KSPROPERTY_ITE_EX_BAND_WIDTH, NULL, 0, &wData, sizeof(wData));
+}
+
+static inline HRESULT it35_GetFreq(IKsPropertySet *pIKsPropertySet, WORD *pwData)
+{
+	HRESULT hr = S_OK;
+	DWORD dwBytes;
+	BYTE buf[sizeof(*pwData)];
+	if (FAILED(hr = pIKsPropertySet->Get(KSPROPSETID_IteExtension, KSPROPERTY_ITE_EX_FREQ, NULL, 0, buf, sizeof(buf), &dwBytes))) {
+		return hr;
+	}
+
+	*pwData = *(WORD*)buf;
+	return hr;
+}
+
+static inline HRESULT it35_PutFreq(IKsPropertySet *pIKsPropertySet, WORD wData)
+{
+	return pIKsPropertySet->Set(KSPROPSETID_IteExtension, KSPROPERTY_ITE_EX_FREQ, NULL, 0, &wData, sizeof(wData));
+}
+
+static inline HRESULT it35_PutISDBIoCtl(IKsPropertySet *pIKsPropertySet, WORD dwData)
 {
 	return pIKsPropertySet->Set(KSPROPSETID_ExtIoCtl, KSPROPERTY_EXT_IO_ISDBT_IO_CTL, NULL, 0, &dwData, sizeof(dwData));
+}
+
+static inline HRESULT it35_GetLNBPower(IKsPropertySet *pIKsPropertySet, BYTE *pbyData)
+{
+	HRESULT hr = S_OK;
+	DWORD dwBytes;
+	BYTE buf[sizeof(*pbyData)];
+	if (FAILED(hr = pIKsPropertySet->Get(KSPROPSETID_DvbsIoCtl, KSPROPERTY_DVBS_IO_LNB_POWER, NULL, 0, buf, sizeof(buf), &dwBytes))) {
+		return hr;
+	}
+
+	*pbyData = *(BYTE*)buf;
+	return hr;
+}
+
+static inline HRESULT it35_PutLNBPower(IKsPropertySet *pIKsPropertySet, BYTE byData)
+{
+	return pIKsPropertySet->Set(KSPROPSETID_DvbsIoCtl, KSPROPERTY_DVBS_IO_LNB_POWER, NULL, 0, &byData, sizeof(byData));
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
@@ -195,7 +249,10 @@ __declspec(dllexport) HRESULT CheckCapture(const WCHAR *szTunerDisplayName, cons
 CIT35Specials::CIT35Specials(HMODULE hMySelf, CComPtr<IBaseFilter> pTunerDevice)
 	: m_hMySelf(hMySelf),
 	  m_pTunerDevice(pTunerDevice),
-	  m_pIKsPropertySet(NULL)
+	  m_pIKsPropertySet(NULL),
+	  m_bRewriteIFFreq(FALSE),
+	  m_bPrivateSetTSID(FALSE),
+	  m_bLNBPowerON(FALSE)
 {
 	::InitializeCriticalSection(&m_CriticalSection);
 
@@ -224,10 +281,27 @@ CIT35Specials::~CIT35Specials()
 
 const HRESULT CIT35Specials::InitializeHook(void)
 {
-	if (m_pTunerDevice == NULL) {
+	if (!m_pTunerDevice) {
 		return E_POINTER;
 	}
 
+	if (!m_pIKsPropertySet)
+		return E_FAIL;
+
+	HRESULT hr;
+
+	if (m_bLNBPowerON) {
+		// iniファイルで指定されていれば ここでLNB Power をONする
+		// LNB Power のOFFはBDA driverが勝手にやってくれるみたい
+		::EnterCriticalSection(&m_CriticalSection);
+		hr = it35_PutLNBPower(m_pIKsPropertySet, 1);
+		::LeaveCriticalSection(&m_CriticalSection);
+
+		if FAILED(hr)
+			OutputDebug(L"SetLNBPower failed.\n");
+		else
+			OutputDebug(L"SetLNBPower Success.\n");
+	}
 	return S_OK;
 }
 
@@ -263,11 +337,21 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam *pTuningParm)
 
 const HRESULT CIT35Specials::SetLNBPower(bool bActive)
 {
+	// 使ってないし、まぁいいか
 	return E_NOINTERFACE;
 }
 
 const HRESULT CIT35Specials::ReadIniFile(WCHAR *szIniFilePath)
 {
+	// IF周波数で put_CarrierFrequency() を行う
+	m_bRewriteIFFreq = (BOOL)::GetPrivateProfileIntW(L"IT35", L"RewriteIFFreq", 0, szIniFilePath);
+
+	// 固有の Property set を使用して TSID の書込みが必要
+	m_bPrivateSetTSID = (BOOL)::GetPrivateProfileIntW(L"IT35", L"PrivateSetTSID", 0, szIniFilePath);
+
+	// LNB電源の供給をONする
+	m_bLNBPowerON = (BOOL)::GetPrivateProfileIntW(L"IT35", L"LNBPowerON", 0, szIniFilePath);
+
 	return S_OK;
 }
 
@@ -291,19 +375,51 @@ const HRESULT CIT35Specials::GetSignalStrength(float *fVal)
 
 const HRESULT CIT35Specials::PreTuneRequest(const TuningParam *pTuningParm, ITuneRequest *pITuneRequest)
 {
+	if (!m_pIKsPropertySet)
+		return E_FAIL;
+
+	HRESULT hr;
+
+	// IF周波数に変換
+	if (m_bRewriteIFFreq && pTuningParm->Antenna->HighOscillator != -1 || pTuningParm->Antenna->LowOscillator != -1) {
+		long freq = pTuningParm->Frequency;
+		if (pTuningParm->Antenna->LNBSwitch != -1) {
+			if (freq < pTuningParm->Antenna->LNBSwitch)
+				freq = freq - pTuningParm->Antenna->LowOscillator;
+			else
+				freq = freq - pTuningParm->Antenna->HighOscillator;
+		}
+		else {
+			if (pTuningParm->Antenna->Tone == 0)
+				freq = freq - pTuningParm->Antenna->LowOscillator;
+			else
+				freq = freq - pTuningParm->Antenna->HighOscillator;
+		}
+
+		CComPtr<ILocator> pILocator;
+		hr = pITuneRequest->get_Locator(&pILocator);
+		if (FAILED(hr) || !pILocator) {
+			OutputDebug(L"ITuneRequest->get_Locator failed.\n");
+			return E_FAIL;
+		}
+
+		pILocator->put_CarrierFrequency(freq);
+
+		hr = pITuneRequest->put_Locator(pILocator);
+	}
+
+	// TSIDをSetする
+	if (m_bPrivateSetTSID && pTuningParm->TSID != 0 && pTuningParm->TSID != -1) {
+		::EnterCriticalSection(&m_CriticalSection);
+		hr = it35_PutISDBIoCtl(m_pIKsPropertySet, (WORD)pTuningParm->TSID);
+		::LeaveCriticalSection(&m_CriticalSection);
+	}
+
 	return S_OK;
 }
 
 const HRESULT CIT35Specials::PostLockChannel(const TuningParam *pTuningParm)
 {
-	HRESULT hr = S_OK;
-
-	if (pTuningParm->TSID != 0 && pTuningParm->TSID != -1) {
-		::EnterCriticalSection(&m_CriticalSection);
-		hr = it35_PutISDBTioCtlproperty(m_pIKsPropertySet, (DWORD)pTuningParm->TSID);
-		::LeaveCriticalSection(&m_CriticalSection);
-	}
-
 	return hr;
 }
 

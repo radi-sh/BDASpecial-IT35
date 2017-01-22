@@ -34,4 +34,8 @@ private:
 	CComPtr<IBaseFilter> m_pTunerDevice;
 	IKsPropertySet *m_pIKsPropertySet;
 	CRITICAL_SECTION m_CriticalSection;
+
+	BOOL m_bRewriteIFFreq;			// IF周波数で put_CarrierFrequency() を行う
+	BOOL m_bPrivateSetTSID;			// 固有の Property set を使用してTSIDの書込みが必要
+	BOOL m_bLNBPowerON;				// LNB電源の供給をONする
 };
