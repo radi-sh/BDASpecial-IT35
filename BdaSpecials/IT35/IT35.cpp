@@ -420,7 +420,7 @@ const HRESULT CIT35Specials::PreTuneRequest(const TuningParam *pTuningParm, ITun
 
 const HRESULT CIT35Specials::PostLockChannel(const TuningParam *pTuningParm)
 {
-	return hr;
+	return S_OK;
 }
 
 void CIT35Specials::Release(void)
