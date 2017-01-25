@@ -225,7 +225,7 @@ __declspec(dllexport) IBdaSpecials * CreateBdaSpecials(CComPtr<IBaseFilter> pTun
 __declspec(dllexport) HRESULT CheckAndInitTuner(IBaseFilter *pTunerDevice, const WCHAR *szDisplayName, const WCHAR *szFriendlyName, const WCHAR *szIniFilePath)
 {
 	// DebugLogを記録するかどうか
-	if (::GetPrivateProfileIntW(L"PLEXPX", L"DebugLog", 0, szIniFilePath)) {
+	if (::GetPrivateProfileIntW(L"IT35", L"DebugLog", 0, szIniFilePath)) {
 		// INIファイルのファイル名取得
 		WCHAR szDebugLogPath[_MAX_PATH + 1];
 		::GetModuleFileNameW(hMySelf, szDebugLogPath, _MAX_PATH + 1);
