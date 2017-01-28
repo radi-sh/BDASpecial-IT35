@@ -14,6 +14,8 @@
 
 using namespace std;
 
+HMODULE hMySelf;
+
 //
 // Broadcast Driver Architecture ‚Å’è‹`‚³‚ê‚Ä‚¢‚é Property set / Method set
 //
@@ -171,8 +173,6 @@ static const GUID KSPROPSETID_PrivateIoCtl = { 0xede22531, 0x92e8, 0x4957, {0x9d
 enum KSPROPERTY_PRIVATE_IO_CTL {
 	KSPROPERTY_PRIVATE_IO_DIGIBEST_TUNER = 0,			// put only
 };
-
-HMODULE hMySelf;
 
 static inline HRESULT it35_GetBandWidth(IKsPropertySet *pIKsPropertySet, WORD *pwData)
 {
