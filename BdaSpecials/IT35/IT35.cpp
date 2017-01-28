@@ -97,8 +97,11 @@ enum KSMETHOD_BDA_DEVICE_CONFIGURATION {
 //
 // IT9135 BDA driver 固有の Property set
 //
+
+// ITE 拡張プロパティセット GUID
 static const GUID KSPROPSETID_IteExtension = { 0xc6efe5eb, 0x855a, 0x4f1b, {0xb7, 0xaa, 0x87, 0xb5, 0xe1, 0xdc, 0x41, 0x13} };
 
+// ITE 拡張プロパティID
 enum KSPROPERTY_ITE_EXTENSION {
 	KSPROPERTY_ITE_EX_BULK_DATA = 0,					// get/put
 	KSPROPERTY_ITE_EX_BULK_DATA_NB,						// get/put
@@ -119,15 +122,19 @@ enum KSPROPERTY_ITE_EXTENSION {
 	KSPROPERTY_ITE_EX_CHANNEL_MODULATION = 99,			// get only
 };
 
+// DVB-S IO コントロール プロパティセット GUID
 static const GUID KSPROPSETID_DvbsIoCtl = { 0xf23fac2d, 0xe1af, 0x48e0,{ 0x8b, 0xbe, 0xa1, 0x40, 0x29, 0xc9, 0x2f, 0x21 } };
 
+// DVB-S IO コントロール プロパティID
 enum KSPROPERTY_DVBS_IO_CTL {
 	KSPROPERTY_DVBS_IO_LNB_POWER = 0,					// get/put
 	KSPROPERTY_DVBS_IO_DiseqcLoad,						// put only
 };
 
+// 拡張 IO コントロール プロパティセット GUID
 static const GUID KSPROPSETID_ExtIoCtl = { 0xf23fac2d, 0xe1af, 0x48e0,{ 0x8b, 0xbe, 0xa1, 0x40, 0x29, 0xc9, 0x2f, 0x11 } };
 
+// 拡張 IO コントロール プロパティ ID
 enum KSPROPERTY_EXT_IO_CTL {
 	KSPROPERTY_EXT_IO_DRV_DATA = 0,						// get/put
 	KSPROPERTY_EXT_IO_DEV_IO_CTL,						// get/put
@@ -136,10 +143,25 @@ enum KSPROPERTY_EXT_IO_CTL {
 	KSPROPERTY_EXT_IO_ISDBT_IO_CTL = 200,				// put only
 };
 
+// 拡張 IO コントロール KSPROPERTY_EXT_IO_DRV_DATA 用ファンクションコード
 enum DRV_DATA_FUNC_CODE {
 	DRV_DATA_FUNC_GET_DRIVER_INFO = 1,
 };
 
+// 拡張 IO コントロール KSPROPERTY_EXT_IO_DRV_DATA 用構造体
+#pragma pack(1)
+struct DrvDataDataSet {
+	struct {
+		DWORD DriverPID;
+		DWORD DriverVersion;
+		DWORD FwVersion_LINK;
+		DWORD FwVersion_OFDM;
+		DWORD TunerID;
+	} DriverInfo;
+};
+#pragma pack()
+
+// 拡張 IO コントロール KSPROPERTY_EXT_IO_DEV_IO_CTL 用ファンクションコード
 enum DEV_IO_CTL_FUNC_CODE {
 	DEV_IO_CTL_FUNC_READ_OFDM_REG = 0,
 	DEV_IO_CTL_FUNC_WRITE_OFDM_REG,
@@ -168,12 +190,51 @@ enum DEV_IO_CTL_FUNC_CODE {
 	DEV_IO_CTL_FUNC_WRITE_GPIO,
 };
 
+// 拡張 IO コントロール KSPROPERTY_EXT_IO_DEV_IO_CTL 用構造体
+#pragma pack(1)
+struct DevIoCtlDataSet {
+	union {
+		struct {
+			DWORD Addr;
+			BYTE WriteData;
+		} Reg;
+		struct {
+			DWORD Key;
+			BYTE Enable;
+		} Decryp;
+		struct {
+			BYTE Length;
+			BYTE Buffer[256 + 3];
+		} UartData;
+	};
+	union {
+		DWORD CardDetected;
+		DWORD UartReady;
+		DWORD AesEnable;
+	};
+	BYTE Reserved1[2];
+	WORD UartBaudRate;
+	BYTE ATR[13];
+	BYTE AesKey[16];
+	BYTE Reserved2[2];
+	DevIoCtlDataSet(void) {
+		memset(this, 0, sizeof(*this));
+	};
+};
+#pragma pack()
+
+// プライベート IO コントロール プロパティセット GUID
 static const GUID KSPROPSETID_PrivateIoCtl = { 0xede22531, 0x92e8, 0x4957, {0x9d, 0x5, 0x6f, 0x30, 0x33, 0x73, 0xe8, 0x37} };
 
+// プライベート IO コントロール プロパティ ID
 enum KSPROPERTY_PRIVATE_IO_CTL {
 	KSPROPERTY_PRIVATE_IO_DIGIBEST_TUNER = 0,			// put only
 };
 
+//
+// ITE 拡張プロパティセット用関数
+//
+// チューニング帯域幅取得
 static inline HRESULT it35_GetBandWidth(IKsPropertySet *pIKsPropertySet, WORD *pwData)
 {
 	HRESULT hr = S_OK;
@@ -189,11 +250,13 @@ static inline HRESULT it35_GetBandWidth(IKsPropertySet *pIKsPropertySet, WORD *p
 	return hr;
 }
 
+// チューニング帯域幅設定
 static inline HRESULT it35_PutBandWidth(IKsPropertySet *pIKsPropertySet, WORD wData)
 {
 	return pIKsPropertySet->Set(KSPROPSETID_IteExtension, KSPROPERTY_ITE_EX_BAND_WIDTH, NULL, 0, &wData, sizeof(wData));
 }
 
+// チューニング周波数取得
 static inline HRESULT it35_GetFreq(IKsPropertySet *pIKsPropertySet, WORD *pwData)
 {
 	HRESULT hr = S_OK;
@@ -209,16 +272,16 @@ static inline HRESULT it35_GetFreq(IKsPropertySet *pIKsPropertySet, WORD *pwData
 	return hr;
 }
 
+// チューニング周波数設定
 static inline HRESULT it35_PutFreq(IKsPropertySet *pIKsPropertySet, WORD wData)
 {
 	return pIKsPropertySet->Set(KSPROPSETID_IteExtension, KSPROPERTY_ITE_EX_FREQ, NULL, 0, &wData, sizeof(wData));
 }
 
-static inline HRESULT it35_PutISDBIoCtl(IKsPropertySet *pIKsPropertySet, WORD dwData)
-{
-	return pIKsPropertySet->Set(KSPROPSETID_ExtIoCtl, KSPROPERTY_EXT_IO_ISDBT_IO_CTL, NULL, 0, &dwData, sizeof(dwData));
-}
-
+//
+// DVB-S IO コントロール プロパティセット用関数
+//
+// LNBPower の設定状態取得
 static inline HRESULT it35_GetLNBPower(IKsPropertySet *pIKsPropertySet, BYTE *pbyData)
 {
 	HRESULT hr = S_OK;
@@ -234,9 +297,272 @@ static inline HRESULT it35_GetLNBPower(IKsPropertySet *pIKsPropertySet, BYTE *pb
 	return hr;
 }
 
+// LNBPower の設定
 static inline HRESULT it35_PutLNBPower(IKsPropertySet *pIKsPropertySet, BYTE byData)
 {
 	return pIKsPropertySet->Set(KSPROPSETID_DvbsIoCtl, KSPROPERTY_DVBS_IO_LNB_POWER, NULL, 0, &byData, sizeof(byData));
+}
+
+//
+// 拡張 IO コントロール KSPROPERTY_EXT_IO_DRV_DATA 用関数
+//
+// KSPROPERTY_EXT_IO_DRV_DATA 共通関数
+static inline HRESULT it35_GetDrvData(IKsPropertySet *pIKsPropertySet, DWORD dwCode, DrvDataDataSet *pData)
+{
+	HRESULT hr = S_OK;
+	DWORD dwBytes;
+	BYTE buf[sizeof(*pData)];
+
+	if FAILED(hr = pIKsPropertySet->Set(KSPROPSETID_ExtIoCtl, KSPROPERTY_EXT_IO_DRV_DATA, NULL, 0, &dwCode, sizeof(dwCode))) {
+		return hr;
+	}
+
+	if (FAILED(hr = pIKsPropertySet->Get(KSPROPSETID_ExtIoCtl, KSPROPERTY_EXT_IO_DRV_DATA, NULL, 0, buf, sizeof(buf), &dwBytes))) {
+		return hr;
+	}
+
+	if (pData)
+		*pData = *(DrvDataDataSet*)buf;
+
+	return hr;
+}
+
+// ドライバーバージョン情報取得
+static inline HRESULT it35_GetDriverInfo(IKsPropertySet *pIKsPropertySet, DrvDataDataSet *pData)
+{
+	return it35_GetDrvData(pIKsPropertySet, DRV_DATA_FUNC_GET_DRIVER_INFO, pData);
+}
+
+//
+// 拡張 IO コントロール KSPROPERTY_EXT_IO_DEV_IO_CTL 用関数
+//
+// KSPROPERTY_EXT_IO_DEV_IO_CTL 共通関数
+static inline HRESULT it35_GetDevIoCtl(IKsPropertySet *pIKsPropertySet, BOOL bNeedGet, DWORD dwCode, DWORD *dwRetVal, DevIoCtlDataSet *pDataSet)
+{
+	HRESULT hr = S_OK;
+	DWORD dwBytes;
+#pragma pack(1)
+	struct {
+		DWORD dwData;
+		DevIoCtlDataSet DataSet;
+	} putGetData;
+#pragma pack()
+
+	putGetData.dwData = dwCode;
+	if (pDataSet)
+		putGetData.DataSet = *pDataSet;
+
+	if FAILED(hr = pIKsPropertySet->Set(KSPROPSETID_ExtIoCtl, KSPROPERTY_EXT_IO_DEV_IO_CTL, NULL, 0, &putGetData, sizeof(putGetData))) {
+		return hr;
+	}
+
+	if (!bNeedGet)
+		return hr;
+
+	if (FAILED(hr = pIKsPropertySet->Get(KSPROPSETID_ExtIoCtl, KSPROPERTY_EXT_IO_DEV_IO_CTL, NULL, 0, &putGetData, sizeof(putGetData), &dwBytes))) {
+		return hr;
+	}
+
+	if (pDataSet)
+		*pDataSet = putGetData.DataSet;
+
+	if (dwRetVal)
+		*dwRetVal = putGetData.dwData;
+
+	return hr;
+}
+
+// OFDM Register 値取得
+static inline HRESULT it35_ReadOfdmReg(IKsPropertySet *pIKsPropertySet, DWORD dwAddr, BYTE *pbyData)
+{
+	HRESULT hr = S_OK;
+	DWORD dwResult;
+	DevIoCtlDataSet dataset;
+
+	dataset.Reg.Addr = dwAddr;
+	if (FAILED(hr = it35_GetDevIoCtl(pIKsPropertySet, TRUE, DEV_IO_CTL_FUNC_READ_OFDM_REG, &dwResult, &dataset))) {
+		return hr;
+	}
+
+	if (pbyData)
+		*pbyData = (BYTE)dwResult;
+
+	return hr;
+}
+
+// OFDM Register 値書込
+static inline HRESULT it35_WriteOfdmReg(IKsPropertySet *pIKsPropertySet, DWORD dwAddr, BYTE byData)
+{
+	DevIoCtlDataSet dataset;
+
+	dataset.Reg.Addr = dwAddr;
+	dataset.Reg.WriteData = byData;
+	return it35_GetDevIoCtl(pIKsPropertySet, FALSE, DEV_IO_CTL_FUNC_WRITE_OFDM_REG, NULL, &dataset);
+}
+
+// Link Register 値取得
+static inline HRESULT it35_ReadLinkReg(IKsPropertySet *pIKsPropertySet, DWORD dwAddr, BYTE *pbyData)
+{
+	HRESULT hr = S_OK;
+	DWORD dwResult;
+	DevIoCtlDataSet dataset;
+
+	dataset.Reg.Addr = dwAddr;
+	if (FAILED(hr = it35_GetDevIoCtl(pIKsPropertySet, TRUE, DEV_IO_CTL_FUNC_READ_LINK_REG, &dwResult, &dataset))) {
+		return hr;
+	}
+
+	if (pbyData)
+		*pbyData = (BYTE)dwResult;
+
+	return hr;
+}
+
+// Link Register 値書込
+static inline HRESULT it35_WriteLinkReg(IKsPropertySet *pIKsPropertySet, DWORD dwAddr, BYTE byData)
+{
+	DevIoCtlDataSet dataset;
+
+	dataset.Reg.Addr = dwAddr;
+	dataset.Reg.WriteData = byData;
+	return it35_GetDevIoCtl(pIKsPropertySet, FALSE, DEV_IO_CTL_FUNC_WRITE_LINK_REG, NULL, &dataset);
+}
+
+//
+static inline HRESULT it35_ApCtrl(IKsPropertySet *pIKsPropertySet)
+{
+	return it35_GetDevIoCtl(pIKsPropertySet, TRUE, DEV_IO_CTL_FUNC_AP_CTRL, NULL, NULL);
+}
+
+// リモコン受信データ取得
+static inline HRESULT it35_ReadRawIR(IKsPropertySet *pIKsPropertySet, DWORD *pdwData)
+{
+	HRESULT hr = S_OK;
+	DWORD dwResult;
+	DevIoCtlDataSet dataset;
+
+	if (FAILED(hr = it35_GetDevIoCtl(pIKsPropertySet, TRUE, DEV_IO_CTL_FUNC_READ_RAW_IR, &dwResult, &dataset))) {
+		return hr;
+	}
+
+	if (pdwData)
+		*pdwData = dwResult;
+
+	return hr;
+}
+
+// UART 送信＆受信データ取得
+static inline HRESULT it35_GetUartData(IKsPropertySet *pIKsPropertySet, BYTE *pRcvBuff, DWORD *pdwLength)
+{
+	HRESULT hr = S_OK;
+	DWORD dwResult;
+	DevIoCtlDataSet dataset;
+	if (FAILED(hr = it35_GetDevIoCtl(pIKsPropertySet, TRUE, DEV_IO_CTL_FUNC_GET_UART_DATA, &dwResult, &dataset))) {
+		return hr;
+	}
+
+	if (pRcvBuff)
+		memcpy(pRcvBuff, dataset.UartData.Buffer, min((DWORD)min(dataset.UartData.Length, 255), *pdwLength));
+
+	if (pdwLength)
+		*pdwLength = dataset.UartData.Length;
+
+	return hr;
+}
+
+// UART 送信データ設定
+static inline HRESULT it35_SentUart(IKsPropertySet *pIKsPropertySet, BYTE *pSendBuff, DWORD dwLength)
+{
+	DevIoCtlDataSet dataset;
+
+	if (pSendBuff) {
+		dataset.UartData.Length =(BYTE)min(255, dwLength);
+		memcpy(dataset.UartData.Buffer, pSendBuff, dataset.UartData.Length);
+	}
+
+	return it35_GetDevIoCtl(pIKsPropertySet, FALSE, DEV_IO_CTL_FUNC_SENT_UART, NULL, &dataset);
+}
+
+// 
+static inline HRESULT it35_CardDetect(IKsPropertySet *pIKsPropertySet, BOOL *pbDetect)
+{
+	HRESULT hr = S_OK;
+	DWORD dwResult;
+	DevIoCtlDataSet dataset;
+
+	if (FAILED(hr = it35_GetDevIoCtl(pIKsPropertySet, TRUE, DEV_IO_CTL_FUNC_CARD_DETECT, &dwResult, &dataset))) {
+		return hr;
+	}
+
+	if (pbDetect)
+		*pbDetect = (BOOL)dataset.CardDetected;
+
+	return hr;
+}
+
+// CARD ATR データ取得
+static inline HRESULT it35_GetATR(IKsPropertySet *pIKsPropertySet, BYTE *pATR)
+{
+	HRESULT hr = S_OK;
+	DWORD dwResult;
+	DevIoCtlDataSet dataset;
+	if (FAILED(hr = it35_GetDevIoCtl(pIKsPropertySet, TRUE, DEV_IO_CTL_FUNC_GET_ATR, &dwResult, &dataset))) {
+		return hr;
+	}
+
+	if (pATR)
+		memcpy(pATR, dataset.ATR, sizeof(dataset.ATR));
+
+	return hr;
+}
+
+// CARD リセット
+static inline HRESULT it35_ResetSmartCard(IKsPropertySet *pIKsPropertySet)
+{
+	return it35_GetDevIoCtl(pIKsPropertySet, FALSE, DEV_IO_CTL_FUNC_RESET_SMART_CARD, NULL, NULL);
+}
+
+// UART Ready 状態取得
+static inline HRESULT it35_IsUartReady(IKsPropertySet *pIKsPropertySet, BOOL *pbReady)
+{
+	HRESULT hr = S_OK;
+	DWORD dwResult;
+	DevIoCtlDataSet dataset;
+
+	if (FAILED(hr = it35_GetDevIoCtl(pIKsPropertySet, TRUE, DEV_IO_CTL_FUNC_IS_UART_READY, &dwResult, &dataset))) {
+		return hr;
+	}
+
+	if (pbReady)
+		*pbReady = (BOOL)dataset.UartReady;
+
+	return hr;
+}
+
+//
+static inline HRESULT it35_GetBoardInputPower(IKsPropertySet *pIKsPropertySet, BOOL *pbPower)
+{
+	HRESULT hr = S_OK;
+	DWORD dwResult;
+	DevIoCtlDataSet dataset;
+
+	if (FAILED(hr = it35_GetDevIoCtl(pIKsPropertySet, TRUE, DEV_IO_CTL_FUNC_GET_BOARD_INPUT_POWER, &dwResult, &dataset))) {
+		return hr;
+	}
+
+	if (pbPower)
+		*pbPower = (BOOL)dwResult;
+
+	return hr;
+}
+
+//
+// 拡張 IO コントロール KSPROPERTY_EXT_IO_ISDBT_IO_CTL 用関数
+//
+// TSID をセット
+static inline HRESULT it35_PutISDBIoCtl(IKsPropertySet *pIKsPropertySet, WORD dwData)
+{
+	return pIKsPropertySet->Set(KSPROPSETID_ExtIoCtl, KSPROPERTY_EXT_IO_ISDBT_IO_CTL, NULL, 0, &dwData, sizeof(dwData));
 }
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
