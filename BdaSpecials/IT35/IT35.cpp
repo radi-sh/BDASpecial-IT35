@@ -183,7 +183,9 @@ static inline HRESULT it35_GetBandWidth(IKsPropertySet *pIKsPropertySet, WORD *p
 		return hr;
 	}
 
-	*pwData = *(WORD*)buf;
+	if (pwData)
+		*pwData = *(WORD*)buf;
+
 	return hr;
 }
 
@@ -201,7 +203,9 @@ static inline HRESULT it35_GetFreq(IKsPropertySet *pIKsPropertySet, WORD *pwData
 		return hr;
 	}
 
-	*pwData = *(WORD*)buf;
+	if (pwData)
+		*pwData = *(WORD*)buf;
+
 	return hr;
 }
 
@@ -224,7 +228,9 @@ static inline HRESULT it35_GetLNBPower(IKsPropertySet *pIKsPropertySet, BYTE *pb
 		return hr;
 	}
 
-	*pbyData = *(BYTE*)buf;
+	if (pbyData)
+		*pbyData = *(BYTE*)buf;
+
 	return hr;
 }
 
