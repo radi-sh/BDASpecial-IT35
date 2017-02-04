@@ -242,6 +242,7 @@
     <ClInclude Include="..\..\common\IBdaSpecials2.h" />
     <ClInclude Include="..\..\common\LockChannel.h" />
     <ClInclude Include="IT35.h" />
+    <ClInclude Include="IT35propset.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\doc\BonDriver_PX_x3U4_S.ini" />
