@@ -73,7 +73,7 @@ int MakeSendFrame(BYTE Nad, BYTE Pcb, BYTE Len, BYTE *pInf, BOOL EdcTypeCrc, BYT
 	return 0;
 };
 
-int ParseRecvdFrame(BYTE *pByte, BYTE *pPcb, BYTE *pLen, BYTE *pInf, BOOL EdcTypeCrc, BYTE *pFrame, DWORD FrameLen)
+int ParseRecvdFrame(BYTE *pNad, BYTE *pPcb, BYTE *pLen, BYTE *pInf, BOOL EdcTypeCrc, BYTE *pFrame, DWORD FrameLen)
 {
 	if (!pFrame)
 		return -1;
@@ -84,8 +84,8 @@ int ParseRecvdFrame(BYTE *pByte, BYTE *pPcb, BYTE *pLen, BYTE *pInf, BOOL EdcTyp
 
 	BYTE *p = pFrame;
 
-	if (pByte)
-		*pByte = *p;	// Node Address
+	if (pNad)
+		*pNad = *p;		// Node Address
 	CalcEdc(*p, &Edc, EdcTypeCrc);
 	p++;
 
