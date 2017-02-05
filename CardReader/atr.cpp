@@ -126,7 +126,7 @@ int CParseATR::Parse(BYTE *pBuf, BYTE Len)
 				if (T == 1) {
 					this->PresenseTCi_T1 = TRUE;
 					this->TCi_T1 = *pBuf;
-					if (*pBuf & 0x01 != 0)
+					if ((*pBuf & 0x01) != 0)
 						this->ParsedInfo.ErrorDetection = ERROR_DETECTION_CRC;
 					else
 						this->ParsedInfo.ErrorDetection = ERROR_DETECTION_LRC;
