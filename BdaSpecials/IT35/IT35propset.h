@@ -418,7 +418,7 @@ static inline HRESULT it35_WriteLinkReg(IKsPropertySet *pIKsPropertySet, DWORD d
 //
 static inline HRESULT it35_ApCtrl(IKsPropertySet *pIKsPropertySet)
 {
-	return it35_GetDevIoCtl(pIKsPropertySet, TRUE, DEV_IO_CTL_FUNC_AP_CTRL, NULL, NULL);
+	return it35_GetDevIoCtl(pIKsPropertySet, FALSE, DEV_IO_CTL_FUNC_AP_CTRL, NULL, NULL);
 }
 
 // リモコン受信データ取得
