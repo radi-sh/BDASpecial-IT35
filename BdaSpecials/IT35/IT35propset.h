@@ -1,5 +1,6 @@
 #pragma once
 
+/*
 //
 // Broadcast Driver Architecture ‚Å’è‹`‚³‚ê‚Ä‚¢‚é Property set / Method set
 //
@@ -77,6 +78,7 @@ enum KSMETHOD_BDA_DEVICE_CONFIGURATION {
 	KSMETHOD_BDA_DELETE_PIN_FACTORY,
 	KSMETHOD_BDA_CREATE_TOPOLOGY,
 };
+*/
 
 //
 // IT9135 BDA driver ŒÅ—L‚Ì Property set
