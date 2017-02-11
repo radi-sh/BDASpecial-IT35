@@ -92,6 +92,8 @@ public:
 		enum_ErrorDetection ErrorDetection;	// TCi T=1
 		ParsedInfo_t(void);
 	} ParsedInfo;
+	BYTE RawData[33];
+	BYTE RawDataLength;
 
 private:
 	BYTE TS;

@@ -193,6 +193,7 @@ struct DevIoCtlDataSet {
 			BYTE Buffer[3 + 254 + 2];
 		} UartData;
 		DWORD DeviceId;
+		DWORD PowerOn;
 	};
 	union {
 		DWORD CardDetected;
@@ -216,6 +217,14 @@ static const GUID KSPROPSETID_PrivateIoCtl = { 0xede22531, 0x92e8, 0x4957,{ 0x9d
 // プライベート IO コントロール プロパティ ID
 enum KSPROPERTY_PRIVATE_IO_CTL {
 	KSPROPERTY_PRIVATE_IO_DIGIBEST_TUNER = 0,			// put only
+};
+
+// プライベート IO コントロール KSPROPERTY_PRIVATE_IO_DIGIBEST_TUNER 用ファンクションコード
+enum PRIVATE_IO_CTL_FUNC_CODE {
+	PRIVATE_IO_CTL_FUNC_PROTECT_TUNER_POWER = 0,
+	PRIVATE_IO_CTL_FUNC_UNPROTECT_TUNER_POWER,
+	PRIVATE_IO_CTL_FUNC_SET_TUNER_POWER_ON,
+	PRIVATE_IO_CTL_FUNC_SET_TUNER_POWER_OFF,
 };
 
 //
@@ -415,10 +424,14 @@ static inline HRESULT it35_WriteLinkReg(IKsPropertySet *pIKsPropertySet, DWORD d
 	return it35_GetDevIoCtl(pIKsPropertySet, FALSE, DEV_IO_CTL_FUNC_WRITE_LINK_REG, NULL, &dataset);
 }
 
-//
-static inline HRESULT it35_ApCtrl(IKsPropertySet *pIKsPropertySet)
+// Tuner パワーコントロール
+static inline HRESULT it35_ApCtrl(IKsPropertySet *pIKsPropertySet, BOOL bPowerOn)
 {
-	return it35_GetDevIoCtl(pIKsPropertySet, FALSE, DEV_IO_CTL_FUNC_AP_CTRL, NULL, NULL);
+	DevIoCtlDataSet dataset;
+
+	dataset.DeviceId = (DWORD)bPowerOn;
+
+	return it35_GetDevIoCtl(pIKsPropertySet, FALSE, DEV_IO_CTL_FUNC_AP_CTRL, NULL, &dataset);
 }
 
 // リモコン受信データ取得
@@ -479,7 +492,7 @@ static inline HRESULT it35_SetUartBaudRate(IKsPropertySet *pIKsPropertySet, WORD
 	return it35_GetDevIoCtl(pIKsPropertySet, FALSE, DEV_IO_CTL_FUNC_SET_UART_BAUDRATE, NULL, &dataset);
 }
 
-// 
+// CARD 検出
 static inline HRESULT it35_CardDetect(IKsPropertySet *pIKsPropertySet, BOOL *pbDetect)
 {
 	HRESULT hr = S_OK;
@@ -535,8 +548,8 @@ static inline HRESULT it35_IsUartReady(IKsPropertySet *pIKsPropertySet, BOOL *pb
 	return hr;
 }
 
-//
-static inline HRESULT it35_GetBoardInputPower(IKsPropertySet *pIKsPropertySet, BOOL *pbPower)
+// 消費電流取得?
+static inline HRESULT it35_GetBoardInputPower(IKsPropertySet *pIKsPropertySet, DWORD *pdwPower)
 {
 	HRESULT hr = S_OK;
 	DWORD dwResult;
@@ -546,8 +559,8 @@ static inline HRESULT it35_GetBoardInputPower(IKsPropertySet *pIKsPropertySet, B
 		return hr;
 	}
 
-	if (pbPower)
-		*pbPower = (BOOL)dwResult;
+	if (pdwPower)
+		*pdwPower = dwResult;
 
 	return hr;
 }
@@ -587,20 +600,9 @@ static inline HRESULT it35_GetRxDeviceId(IKsPropertySet *pIKsPropertySet, DWORD 
 }
 
 // 
-static inline HRESULT it35_Unk101(IKsPropertySet *pIKsPropertySet, BOOL *pbDetect)
+static inline HRESULT it35_Unk101(IKsPropertySet *pIKsPropertySet)
 {
-	HRESULT hr = S_OK;
-	DWORD dwResult;
-	DevIoCtlDataSet dataset;
-
-	if (FAILED(hr = it35_GetDevIoCtl(pIKsPropertySet, TRUE, DEV_IO_CTL_FUNC_UNKNOWN101, &dwResult, &dataset))) {
-		return hr;
-	}
-
-	if (pbDetect)
-		*pbDetect = (BOOL)dataset.CardDetected;
-
-	return hr;
+	return it35_GetDevIoCtl(pIKsPropertySet, FALSE, DEV_IO_CTL_FUNC_UNKNOWN101, NULL, NULL);
 }
 
 //
@@ -612,3 +614,11 @@ static inline HRESULT it35_PutISDBIoCtl(IKsPropertySet *pIKsPropertySet, WORD dw
 	return pIKsPropertySet->Set(KSPROPSETID_ExtIoCtl, KSPROPERTY_EXT_IO_ISDBT_IO_CTL, NULL, 0, &dwData, sizeof(dwData));
 }
 
+//
+// プライベート IO コントロール KSPROPERTY_PRIVATE_IO_DIGIBEST_TUNER 用関数
+//
+// DigiBest Tuner 用プライベートファンクション
+static inline HRESULT it35_DigibestPrivateIoControl(IKsPropertySet *pIKsPropertySet, DWORD dwCode)
+{
+	return pIKsPropertySet->Set(KSPROPSETID_PrivateIoCtl, KSPROPERTY_PRIVATE_IO_DIGIBEST_TUNER, NULL, 0, &dwCode, sizeof(dwCode));
+}

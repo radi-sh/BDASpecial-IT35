@@ -32,7 +32,9 @@ CParseATR::CParseATR(void)
 	PresenseTCi_T1(FALSE),
 	LenTi(0),
 	PresenseTCK(FALSE),
-	PresenseTDi()
+	PresenseTDi(),
+	RawData(),
+	RawDataLength(0)
 {
 	return;
 };
@@ -45,6 +47,12 @@ int CParseATR::Parse(BYTE *pBuf, BYTE Len)
 	if (Len = 0)
 		return -1;
 
+	if (Len > 33)
+		Len = 33;
+
+	BYTE *pBufStart = pBuf;
+
+	// TS
 	this->TS = *pBuf;
 	pBuf++;
 	Len--;
@@ -62,23 +70,27 @@ int CParseATR::Parse(BYTE *pBuf, BYTE Len)
 
 		if (PresenseTA) {
 			if (i == 1) {
+				// TA1
 				this->PresenseTA1 = TRUE;
 				this->TA1 = *pBuf;
 			}
 			else if (i == 2) {
+				// TA2
 				this->PresenseTA2 = TRUE;
 				this->TA2 = *pBuf;
 			}
 			else if (i >= 3) {
+				// TAi
 				if (T == 1) {
+					// T=1
 					this->PresenseTAi_T1 = TRUE;
 					this->TAi_T1 = *pBuf;
 					this->ParsedInfo.IFSC = *pBuf;
 				}
 				else if (T == 15) {
+					// T=15
 					this->PresenseTAi_T15 = TRUE;
 					this->TAi_T15 = *pBuf;
-
 				}
 			}
 			PresenseTA = FALSE;
@@ -88,21 +100,26 @@ int CParseATR::Parse(BYTE *pBuf, BYTE Len)
 		}
 		if (PresenseTB) {
 			if (i == 1) {
+				// TB1
 				this->PresenseTB1 = TRUE;
 				this->TB1 = *pBuf;
 			}
 			else if (i == 2) {
+				// TB2
 				this->PresenseTB2 = TRUE;
 				this->TB2 = *pBuf;
 			}
 			else if (i >= 3) {
+				// TBi
 				if (T == 1) {
+					// T=1
 					this->PresenseTBi_T1 = TRUE;
 					this->TBi_T1 = *pBuf;
 					this->ParsedInfo.CWI = *pBuf & 0xf;
 					this->ParsedInfo.BWI = (*pBuf & 0xf0) >> 4;
 				}
 				else if (T == 15) {
+					// T=15
 					this->PresenseTBi_T15 = TRUE;
 					this->TBi_T15 = *pBuf;
 
@@ -115,15 +132,19 @@ int CParseATR::Parse(BYTE *pBuf, BYTE Len)
 		}
 		if (PresenseTC) {
 			if (i == 1) {
+				// TC1
 				this->PresenseTC1 = TRUE;
 				this->TC1 = *pBuf;
 			}
 			else if (i == 2) {
+				// TC2
 				this->PresenseTC2 = TRUE;
 				this->TC2 = *pBuf;
 			}
 			else if (i >= 3) {
+				// TCi
 				if (T == 1) {
+					// T=1
 					this->PresenseTCi_T1 = TRUE;
 					this->TCi_T1 = *pBuf;
 					if ((*pBuf & 0x01) != 0)
@@ -139,9 +160,12 @@ int CParseATR::Parse(BYTE *pBuf, BYTE Len)
 		}
 		if (PresenseTD) {
 			if (i == 0) {
+				// T0
+				this->T0 = *pBuf;
 				this->LenTi = *pBuf & 0xf;
 			}
 			else {
+				// TD1, TD2 or TDi
 				this->PresenseTDi[i] = TRUE;
 				this->TDi[i] = *pBuf;
 				T = *pBuf & 0xf;
@@ -159,19 +183,26 @@ int CParseATR::Parse(BYTE *pBuf, BYTE Len)
 		}
 	}
 
+	// Ti
 	for (int ti = 0; ti < this->LenTi; ti++) {
 		if (Len == 0)
 			return -1;
 		this->Ti[ti] = *pBuf;
 		pBuf++;
-		i++;
+		Len--;
 	}
 
+	// TCK
 	if (this->PresenseTCK) {
 		if (Len == 0)
 			return -1;
 		this->TCK = *pBuf;
+		pBuf++;
+		Len--;
 	}
+
+	this->RawDataLength = (BYTE)(pBuf - pBufStart);
+	memcpy(this->RawData, pBufStart, this->RawDataLength);
 
 	return 0;
 };
