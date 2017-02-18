@@ -54,6 +54,7 @@ int CParseATR::Parse(BYTE *pBuf, BYTE Len)
 
 	// TS
 	this->TS = *pBuf;
+	this->ParsedInfo.Convention = (enum_Convention)*pBuf;
 	pBuf++;
 	Len--;
 
@@ -73,11 +74,16 @@ int CParseATR::Parse(BYTE *pBuf, BYTE Len)
 				// TA1
 				this->PresenseTA1 = TRUE;
 				this->TA1 = *pBuf;
+				this->ParsedInfo.DI = (enum_DI)(*pBuf & 0x0f);
+				this->ParsedInfo.FI = (enum_FI)((*pBuf & 0xf0) >>4);
 			}
 			else if (i == 2) {
 				// TA2
 				this->PresenseTA2 = TRUE;
 				this->TA2 = *pBuf;
+				this->ParsedInfo.T = (*pBuf & 0x0f);
+				this->ParsedInfo.EtuDuration = (enum_EtuDuration)((*pBuf & 0x10) >> 4);
+				this->ParsedInfo.ModeSpecific = (enum_ModeSpecific)((*pBuf & 0xc0) >> 6);
 			}
 			else if (i >= 3) {
 				// TAi
@@ -103,11 +109,14 @@ int CParseATR::Parse(BYTE *pBuf, BYTE Len)
 				// TB1
 				this->PresenseTB1 = TRUE;
 				this->TB1 = *pBuf;
+				this->ParsedInfo.PI1 = (*pBuf & 0x1f);
+				this->ParsedInfo.II = (enum_II)((*pBuf & 0x60) >> 5);
 			}
 			else if (i == 2) {
 				// TB2
 				this->PresenseTB2 = TRUE;
 				this->TB2 = *pBuf;
+				this->ParsedInfo.PI2 = *pBuf;
 			}
 			else if (i >= 3) {
 				// TBi
@@ -135,11 +144,13 @@ int CParseATR::Parse(BYTE *pBuf, BYTE Len)
 				// TC1
 				this->PresenseTC1 = TRUE;
 				this->TC1 = *pBuf;
+				this->ParsedInfo.N = *pBuf;
 			}
 			else if (i == 2) {
 				// TC2
 				this->PresenseTC2 = TRUE;
 				this->TC2 = *pBuf;
+				this->ParsedInfo.WI = *pBuf;
 			}
 			else if (i >= 3) {
 				// TCi
