@@ -25,6 +25,7 @@
 
 using namespace std;
 
+FILE *g_fpLog = NULL;
 
 #define READER_NAME "Plex PX-x3U4 Card Reader 0"
 static const SCARDHANDLE DUMMY_SCARDHANDLE = 0x5ca2d4a1;
