@@ -200,11 +200,11 @@ struct DevIoCtlDataSet {
 		DWORD UartReady;
 		DWORD AesEnable;
 	};
-	BYTE Reserved1[2];
-	WORD UartBaudRate;
-	BYTE ATR[13];
-	BYTE AesKey[16];
-	BYTE Reserved2[2];
+	BYTE Reserved1[2];							// -28h (-40)
+	WORD UartBaudRate;							// -26h (-38)
+	BYTE ATR[13];								// -24h (-36)
+	BYTE AesKey[16];							// -17h (-23)
+	BYTE Reserved2[7];							// -07h (-7)
 	DevIoCtlDataSet(void) {
 		memset(this, 0, sizeof(*this));
 	};
@@ -451,12 +451,15 @@ static inline HRESULT it35_ReadRawIR(IKsPropertySet *pIKsPropertySet, DWORD *pdw
 	return hr;
 }
 
-// UART 送信＆受信データ取得
+// UART 受信データ取得
 static inline HRESULT it35_GetUartData(IKsPropertySet *pIKsPropertySet, BYTE *pRcvBuff, DWORD *pdwLength)
 {
 	HRESULT hr = S_OK;
 	DWORD dwResult;
 	DevIoCtlDataSet dataset;
+
+	dataset.UartData.Length = 255;		// ここに0を設定して呼び出すとBSoD BAD_POOL_HEADER が発生する(Ver. Beta ドライバ)
+
 	if (FAILED(hr = it35_GetDevIoCtl(pIKsPropertySet, TRUE, DEV_IO_CTL_FUNC_GET_UART_DATA, &dwResult, &dataset))) {
 		return hr;
 	}
@@ -515,6 +518,7 @@ static inline HRESULT it35_GetATR(IKsPropertySet *pIKsPropertySet, BYTE *pATR)
 	HRESULT hr = S_OK;
 	DWORD dwResult;
 	DevIoCtlDataSet dataset;
+
 	if (FAILED(hr = it35_GetDevIoCtl(pIKsPropertySet, TRUE, DEV_IO_CTL_FUNC_GET_ATR, &dwResult, &dataset))) {
 		return hr;
 	}

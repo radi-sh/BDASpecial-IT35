@@ -1,5 +1,75 @@
 #pragma once
 
-void CalcEdc(BYTE Val, WORD *pEdc, BOOL EdcTypeCrc);
-int MakeSendFrame(BYTE Nad, BYTE Pcb, BYTE Len, BYTE *pInf, BOOL EdcTypeCrc, BYTE *pFrame, DWORD *pFrameLen);
-int ParseRecvdFrame(BYTE *pNad, BYTE *pPcb, BYTE *pLen, BYTE *pInf, BOOL EdcTypeCrc, BYTE *pFrame, DWORD FrameLen);
+class CComProtocolT1 {
+public:
+	enum BLOCK_TYPES {
+		BLOCK_TYPE_I = 0x00,
+		BLOCK_TYPE_R = 0x80,
+		BLOCK_TYPE_S = 0xc0,
+	};
+	enum IBLOCK_FUNCTIONS {
+		IBLOCK_FUNCTION_STANDARD = 0x00,
+		IBLOCK_CHAIN = 0x20,
+		IBLOCK_SEQUENCE = 0x40,
+	};
+	enum RBLOCK_FUNCTIONS {
+		RBLOCK_FUNCTION_NO_ERRORS = 0x80,
+		RBLOCK_FUNCTION_EDC_ERROR = 0x81,
+		RBLOCK_FUNCTION_OTHER_ERROR = 0x82,
+		RBLOCK_SEQUENCE = 0x10,
+	};
+	enum SBLOCK_FUNCTIONS {
+		SBLOCK_FUNCTION_RESYNC = 0xc0,
+		SBLOCK_FUNCTION_IFS = 0xc1,
+		SBLOCK_FUNCTION_ABORT = 0xc2,
+		SBLOCK_FUNCTION_WTX = 0xc3,
+		SBLOCK_RESPONSE = 0x20,
+	};
+	enum EDC_TYPES {
+		EDC_TYPE_LRC = 0,
+		EDC_TYPE_CRC,
+	};
+	enum COM_PROTOCOL_T1_ERROR_CODE {
+		COM_PROTOCOL_T1_S_NO_ERROR = 0,
+		COM_PROTOCOL_T1_E_EDC = -1,
+		COM_PROTOCOL_T1_E_LEN = -2,
+		COM_PROTOCOL_T1_E_NAD = -3,
+		COM_PROTOCOL_T1_E_SEND = -10,
+		COM_PROTOCOL_T1_E_RECEIVE = -11,
+		COM_PROTOCOL_T1_E_NO_CARD = -20,
+		COM_PROTOCOL_T1_E_NOT_READY = -21,
+		COM_PROTOCOL_T1_E_NOT_FUNCTIONING = -30,
+		COM_PROTOCOL_T1_E_POINTER = -200,
+	};
+
+protected:
+	BYTE CardIFSC;
+	BYTE SendNAD;
+	BYTE RecvNAD;
+	BYTE EDCType;
+	BYTE SendFrame[3 + 254 + 2];
+	DWORD SendFrameLen;
+	BYTE RecvFrame[3 + 254 + 2];
+	DWORD RecvFrameLen;
+	BOOL EnableDetailLog;
+	BOOL IgnoreEDCError;
+
+public:
+	CComProtocolT1(void);
+	WORD GetEDCInitialValue(void);
+	void CalcEDC(BYTE Val, WORD *pEdc);
+	COM_PROTOCOL_T1_ERROR_CODE MakeSendFrame(BYTE Pcb, const BYTE *pInf, BYTE Len);
+	COM_PROTOCOL_T1_ERROR_CODE ParseRecvdFrame(BYTE *pPcb, BYTE *pInf, BYTE *pLen);
+	COM_PROTOCOL_T1_ERROR_CODE SendIBlock(BOOL SeqNum, BOOL Chain, const BYTE *pInf, BYTE Len);
+	COM_PROTOCOL_T1_ERROR_CODE SendRBlock(BOOL SeqNum, BYTE Stat);
+	COM_PROTOCOL_T1_ERROR_CODE SendSBlock(BOOL IsResponse, BYTE Func);
+	COM_PROTOCOL_T1_ERROR_CODE RecvBlock(BYTE *pPcb, BYTE *pInf, BYTE *pLen);
+	COM_PROTOCOL_T1_ERROR_CODE Transmit(const BYTE *pSnd, DWORD LenSnd, BYTE *pRcv, DWORD *pLenRcv);
+	void SetCardIFSC(BYTE IFSC);
+	void SetNodeAddress(BYTE IFD, BYTE ICC);
+	void SetEDCType(BYTE Type);
+	void SetDetailLog(BOOL Flag);
+	virtual COM_PROTOCOL_T1_ERROR_CODE TxBlock(void);
+	virtual COM_PROTOCOL_T1_ERROR_CODE RxBlock(void);
+};
+
