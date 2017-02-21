@@ -41,6 +41,8 @@ CParseATR::CParseATR(void)
 
 int CParseATR::Parse(BYTE *pBuf, BYTE Len)
 {
+	this->RawDataLength = 0;
+
 	if (!pBuf)
 		return -1;
 

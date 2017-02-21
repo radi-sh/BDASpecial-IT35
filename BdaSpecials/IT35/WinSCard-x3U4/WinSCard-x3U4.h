@@ -63,3 +63,47 @@ extern "C" {
 	LONG WINAPI SCardCancel_(SCARDCONTEXT hContext);
 	SCARD_IO_REQUEST g_rgSCardT1Pci_;
 }
+
+#pragma pack(1)
+struct SharedMemory {
+	BOOL CardReady;
+	BOOL DoneReset;
+	BOOL SequenceNumber;
+	DWORD reserved12;
+	DWORD reserved16;
+	DWORD ATRLength;
+	BYTE ATR[33];
+	BYTE reserved57[3];
+	DWORD reserved60;
+	DWORD reserved64[240];
+};
+#pragma pack()
+
+
+class CComProtocolT1x3U4 : public CComProtocolT1 {
+private:
+	DWORD LastTickCount;
+	DWORD GuardInterval;
+
+public:
+	CComProtocolT1x3U4(void);
+	virtual COM_PROTOCOL_T1_ERROR_CODE TxBlock(void);
+	virtual COM_PROTOCOL_T1_ERROR_CODE RxBlock(void);
+	void SetGuardInterval(DWORD dwMilliSec);
+
+private:
+	void SetLastTickCount(void);
+	void WaitGuardInterval(void);
+};
+
+class LockProc {
+private:
+	DWORD result;
+
+public:
+	LockProc(DWORD dwMilliSeconds);
+	LockProc(void);
+	~LockProc(void);
+	BOOL IsSuccess(void);
+};
+

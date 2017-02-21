@@ -19,6 +19,10 @@ CComProtocolT1::CComProtocolT1(void)
 {
 };
 
+CComProtocolT1::~CComProtocolT1(void)
+{
+};
+
 WORD CComProtocolT1::GetEDCInitialValue(void)
 {
 	if (EDCType == EDC_TYPE_CRC)
@@ -228,10 +232,10 @@ CComProtocolT1::COM_PROTOCOL_T1_ERROR_CODE CComProtocolT1::SendRBlock(BOOL SeqNu
 	return COM_PROTOCOL_T1_S_NO_ERROR;
 };
 
-CComProtocolT1::COM_PROTOCOL_T1_ERROR_CODE CComProtocolT1::SendSBlock(BOOL IsResponse, BYTE Func)
+CComProtocolT1::COM_PROTOCOL_T1_ERROR_CODE CComProtocolT1::SendSBlock(BOOL IsResponse, BYTE Func, const BYTE *pInf, BYTE Len)
 {
 	COM_PROTOCOL_T1_ERROR_CODE r;
-	if ((r = MakeSendFrame(BLOCK_TYPE_S | (IsResponse ? SBLOCK_RESPONSE : 0) | Func, NULL, 0)) != COM_PROTOCOL_T1_S_NO_ERROR) {
+	if ((r = MakeSendFrame(BLOCK_TYPE_S | (IsResponse ? SBLOCK_RESPONSE : 0) | Func, pInf, Len)) != COM_PROTOCOL_T1_S_NO_ERROR) {
 		OutputDebug(L"SendSBlock: Error in MakeSendFrame(). code=%d\n", r);
 		return r;
 	}
@@ -260,10 +264,8 @@ CComProtocolT1::COM_PROTOCOL_T1_ERROR_CODE CComProtocolT1::RecvBlock(BYTE *pPcb,
 	return COM_PROTOCOL_T1_S_NO_ERROR;
 };
 
-CComProtocolT1::COM_PROTOCOL_T1_ERROR_CODE CComProtocolT1::Transmit(const BYTE *pSnd, DWORD LenSnd, BYTE *pRcv, DWORD *pLenRcv)
+CComProtocolT1::COM_PROTOCOL_T1_ERROR_CODE CComProtocolT1::Transmit(const BYTE *pSnd, DWORD LenSnd, BYTE *pRcv, DWORD *pLenRcv, BOOL *pSeqNum)
 {
-	static BOOL SeqNum = FALSE;
-
 	DWORD MaxInfSize = CardIFSC;
 	const BYTE *pSendBufPointer = pSnd;
 	DWORD SendBufRemain = LenSnd;
@@ -283,14 +285,14 @@ CComProtocolT1::COM_PROTOCOL_T1_ERROR_CODE CComProtocolT1::Transmit(const BYTE *
 			if (NeedSendI) {
 				// Iブロックの送信（または再送）が必要
 				NeedSendI = FALSE;
-				if ((r = SendIBlock(SeqNum, TRUE, pSendBufPointer, (BYTE)MaxInfSize)) != COM_PROTOCOL_T1_S_NO_ERROR) {
+				if ((r = SendIBlock(*pSeqNum, TRUE, pSendBufPointer, (BYTE)MaxInfSize)) != COM_PROTOCOL_T1_S_NO_ERROR) {
 					OutputDebug(L"Transmit: Error in SendIBlock() with chain. code=%d\n", r);
 					return r;
 				}
 			}
 			else {
 				// エラーハンドリングでRブロックを返す
-				if ((r = SendRBlock(SeqNum, RBLOCK_FUNCTION_OTHER_ERROR)) != COM_PROTOCOL_T1_S_NO_ERROR) {
+				if ((r = SendRBlock(*pSeqNum, RBLOCK_FUNCTION_OTHER_ERROR)) != COM_PROTOCOL_T1_S_NO_ERROR) {
 					OutputDebug(L"Transmit: Error in SendRBlock() with chain. code=%d\n", r);
 					return r;
 				}
@@ -310,7 +312,7 @@ CComProtocolT1::COM_PROTOCOL_T1_ERROR_CODE CComProtocolT1::Transmit(const BYTE *
 				continue;
 			}
 			// 受信フレームは正常
-			if (RecvPCB == (RBLOCK_FUNCTION_NO_ERRORS | (!SeqNum ? RBLOCK_SEQUENCE : 0))) {
+			if (RecvPCB == (RBLOCK_FUNCTION_NO_ERRORS | (!*pSeqNum ? RBLOCK_SEQUENCE : 0))) {
 				// 相手が受取ったので次のブロックへ
 				break;
 			}
@@ -326,7 +328,7 @@ CComProtocolT1::COM_PROTOCOL_T1_ERROR_CODE CComProtocolT1::Transmit(const BYTE *
 			continue;
 		}
 		// 次のブロックへ
-		SeqNum = !SeqNum;
+		*pSeqNum = !*pSeqNum;
 		pSendBufPointer += MaxInfSize;
 		SendBufRemain -= MaxInfSize;
 	}
@@ -334,7 +336,7 @@ CComProtocolT1::COM_PROTOCOL_T1_ERROR_CODE CComProtocolT1::Transmit(const BYTE *
 	int retry2 = 0;
 	BOOL DoneSend = FALSE;
 	BOOL NeedSendI2 = TRUE;
-	BOOL SeqNumRecv = SeqNum;
+	BOOL SeqNumRecv = *pSeqNum;
 	BYTE ErrorType = RBLOCK_FUNCTION_NO_ERRORS;
 	while (1) {
 		if (!DoneSend) {
@@ -342,14 +344,14 @@ CComProtocolT1::COM_PROTOCOL_T1_ERROR_CODE CComProtocolT1::Transmit(const BYTE *
 			if (NeedSendI2) {
 				// Iブロックの送信（または再送）が必要
 				NeedSendI2 = FALSE;
-				if ((r = SendIBlock(SeqNum, FALSE, pSendBufPointer, (BYTE)SendBufRemain)) != COM_PROTOCOL_T1_S_NO_ERROR) {
+				if ((r = SendIBlock(*pSeqNum, FALSE, pSendBufPointer, (BYTE)SendBufRemain)) != COM_PROTOCOL_T1_S_NO_ERROR) {
 					OutputDebug(L"Transmit: Error in SendIBlock(). code=%d\n", r);
 					return r;
 				}
 			}
 			else {
 				// エラーハンドリングでRブロックを返す
-				if ((r = SendRBlock(SeqNum, ErrorType)) != COM_PROTOCOL_T1_S_NO_ERROR) {
+				if ((r = SendRBlock(*pSeqNum, ErrorType)) != COM_PROTOCOL_T1_S_NO_ERROR) {
 					OutputDebug(L"Transmit: Error in SendRBlock() with sent. code=%d\n", r);
 					return r;
 				}
@@ -377,7 +379,7 @@ CComProtocolT1::COM_PROTOCOL_T1_ERROR_CODE CComProtocolT1::Transmit(const BYTE *
 			continue;
 		}
 		// 受信フレームは正常
-		if (!DoneSend && (RecvPCB & 0xc0) == BLOCK_TYPE_R && (RecvPCB & RBLOCK_SEQUENCE) == (SeqNum ? RBLOCK_SEQUENCE : 0)) {
+		if (!DoneSend && (RecvPCB & 0xc0) == BLOCK_TYPE_R && (RecvPCB & RBLOCK_SEQUENCE) == (*pSeqNum ? RBLOCK_SEQUENCE : 0)) {
 			// R Block with current sequence number
 			// 相手から再送の要求があった
 			NeedSendI2 = TRUE;
@@ -393,8 +395,10 @@ CComProtocolT1::COM_PROTOCOL_T1_ERROR_CODE CComProtocolT1::Transmit(const BYTE *
 		else if ((RecvPCB & 0x80) == 0x00) {
 			// I Block
 			// 相手からのIブロックが返ってきた
-			DoneSend = TRUE;
-			SeqNum ^= 0x01;
+			if (!DoneSend) {
+				DoneSend = TRUE;
+				*pSeqNum = !*pSeqNum;
+			}
 			retry2 = 0;
 		}
 		else {
