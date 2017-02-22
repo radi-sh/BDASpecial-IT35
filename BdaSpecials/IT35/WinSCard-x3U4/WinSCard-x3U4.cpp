@@ -175,11 +175,6 @@ static BOOL ResetCard(void)
 		if (!l_pShMem->DoneReset) {
 			// Card リセット処理必要
 			OutputDebug(L"ResetCard: Need reset.\n");
-			LockProc Lock;
-			if (!Lock.IsSuccess()) {
-				OutputDebug(L"ResetCard: Error in Lock.\n");
-				return FALSE;
-			}
 
 			// Card リセット
 			if (FAILED(hr = COMProc.ResetCard())) {
@@ -213,14 +208,9 @@ static BOOL ResetCard(void)
 			}
 			l_pShMem->DoneReset = TRUE;
 		}
-		LockProc Lock;
-		if (!Lock.IsSuccess()) {
-			OutputDebug(L"ResetCard: Error in Lock.\n");
-			return FALSE;
-		}
 
 		// RESYNCH 要求
-		if ((r = Protocol.SendSBlock(FALSE, CComProtocolT1::SBLOCK_FUNCTION_RESYNCH, NULL, 0)) != 0) {
+		if ((r = Protocol.SendSBlock(FALSE, CComProtocolT1::SBLOCK_FUNCTION_RESYNCH, NULL, 0)) != CComProtocolT1::COM_PROTOCOL_T1_S_NO_ERROR) {
 			OutputDebug(L"ResetCard: Error sending RESYNCH. code=%d\n", r);
 			l_pShMem->DoneReset = FALSE;
 			retry++;
@@ -230,7 +220,7 @@ static BOOL ResetCard(void)
 		}
 
 		// レスポンス取得
-		if ((r = Protocol.RecvBlock(&rxpcb, rxbuf, &rxlen)) != 0) {
+		if ((r = Protocol.RecvBlock(&rxpcb, rxbuf, &rxlen)) != CComProtocolT1::COM_PROTOCOL_T1_S_NO_ERROR) {
 			OutputDebug(L"ResetCard: Error Receiving RESYNCH response. code=%d\n", r);
 			l_pShMem->DoneReset = FALSE;
 			retry++;
@@ -249,8 +239,10 @@ static BOOL ResetCard(void)
 			break;
 		}
 
-		// IFS 要求
-		if ((r = Protocol.SendSBlock(FALSE, CComProtocolT1::SBLOCK_FUNCTION_IFS, &IFSD, sizeof(IFSD))) != 0) {
+		// IFSD 値通知
+		// デフォルト値の32ではM系のカードの不具合（少なくともISO7816-4の仕様どおりには動作しない）に引っかかる...
+		// っていうか、ARIB STD-B25には必ず最大値の254に変更しろと明記されているし...
+		if ((r = Protocol.SendSBlock(FALSE, CComProtocolT1::SBLOCK_FUNCTION_IFS, &IFSD, sizeof(IFSD))) != CComProtocolT1::COM_PROTOCOL_T1_S_NO_ERROR) {
 			OutputDebug(L"ResetCard: Error sending IFS. code=%d\n", r);
 			l_pShMem->DoneReset = FALSE;
 			retry++;
@@ -318,9 +310,11 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 			Protocol.SetDetailLog(TRUE);
 
 		// 送受信 Guard Interval 時間
+		// カード側は2～3msecもあれば十分なはずだけど何故かUARTReadyが落ちてしまうことがあるみたい
 		Protocol.SetGuardInterval(::GetPrivateProfileIntW(L"SCard", L"GuardInterval", 50, szIniFilePath));
 
 		// IFD側の最大受信可能ブロックサイズ
+		// 本来設定する必要は無いけどM系カードの不具合検証用として用意しておく
 		IFSD = ::GetPrivateProfileIntW(L"SCard", L"IFSD", 254, szIniFilePath);
 
 		break;
@@ -354,6 +348,11 @@ LONG WINAPI SCardConnectA_(SCARDCONTEXT hContext, LPCSTR szReader, DWORD dwShare
 	}
 
 	if (!l_pShMem->CardReady) {
+		LockProc Lock;
+		if (!Lock.IsSuccess()) {
+			OutputDebug(L"SCardConnectA: Error in Lock.\n");
+			return SCARD_E_TIMEOUT;
+		}
 		if (!ResetCard())
 		{
 			OutputDebug(L"SCardConnectA: Error in ResetCard()\n");
@@ -377,6 +376,11 @@ LONG WINAPI SCardConnectW_(SCARDCONTEXT hContext, LPWSTR szReader, DWORD dwShare
 	}
 
 	if (!l_pShMem->CardReady) {
+		LockProc Lock;
+		if (!Lock.IsSuccess()) {
+			OutputDebug(L"SCardConnectW: Error in Lock.\n");
+			return SCARD_E_TIMEOUT;
+		}
 		if (!ResetCard())
 		{
 			OutputDebug(L"SCardConnectW: Error in ResetCard()\n");
@@ -520,23 +524,51 @@ LONG WINAPI SCardStatusW_(SCARDHANDLE hCard, LPWSTR szReaderNames, LPDWORD pcchR
 LONG WINAPI SCardTransmit_(SCARDHANDLE hCard, LPCSCARD_IO_REQUEST pioSendPci, LPCBYTE pbSendBuffer, DWORD cbSendLength, LPSCARD_IO_REQUEST pioRecvPci, LPBYTE pbRecvBuffer, LPDWORD pcbRecvLength)
 {
 	CComProtocolT1::COM_PROTOCOL_T1_ERROR_CODE r;
+	int retry = 0;
+	BOOL success = FALSE;
 
-	if (!l_pShMem->CardReady) {
-		if (!ResetCard())
-		{
-			OutputDebug(L"SCardTransmit: Error in ResetCard()\n");
-			return SCARD_E_NOT_READY;
-		}
+	LockProc Lock;
+	if (!Lock.IsSuccess()) {
+		OutputDebug(L"SCardTransmit: Error in Lock.\n");
+		return SCARD_E_TIMEOUT;
 	}
 
-	{
-		LockProc Lock;
-		if (!Lock.IsSuccess())
-			return SCARD_E_TIMEOUT;
+	while (!success) {
+		if (!l_pShMem->CardReady) {
+			if (!ResetCard())
+			{
+				OutputDebug(L"SCardTransmit: Error in ResetCard()\n");
+				return SCARD_E_NOT_READY;
+			}
+		}
 
-		if ((r = Protocol.Transmit(pbSendBuffer, cbSendLength, pbRecvBuffer, pcbRecvLength, &(l_pShMem->SequenceNumber))) != 0) {
+		switch (r = Protocol.Transmit(pbSendBuffer, cbSendLength, pbRecvBuffer, pcbRecvLength, &(l_pShMem->SequenceNumber))) {
+		case CComProtocolT1::COM_PROTOCOL_T1_S_NO_ERROR:
+			success = TRUE;
+			break;
+
+		case CComProtocolT1::COM_PROTOCOL_T1_E_POINTER:
+		case CComProtocolT1::COM_PROTOCOL_T1_E_NO_CARD:
+			OutputDebug(L"SCardTransmit: Fatal error in Transmit()\n");
+			return SCARD_E_NOT_READY;
+
+		default:
+			OutputDebug(L"SCardTransmit: Error in Transmit()\n");
 			l_pShMem->CardReady = FALSE;
-			return SCARD_F_COMM_ERROR;
+			retry++;
+			if (retry > 2) {
+				OutputDebug(L"SCardTransmit: Aborted.\n");
+				return SCARD_F_COMM_ERROR;
+			}
+			else if (retry > 1) {
+				OutputDebug(L"SCardTransmit: Trying reset...\n");
+				l_pShMem->DoneReset = FALSE;
+				break;
+			}
+			else {
+				OutputDebug(L"SCardTransmit: Trying RESYNCH...\n");
+				break;
+			}
 		}
 	}
 

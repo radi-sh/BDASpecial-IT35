@@ -102,22 +102,18 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <GenerateManifest>true</GenerateManifest>
-    <TargetName>WinSCard</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Static|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <GenerateManifest>true</GenerateManifest>
-    <TargetName>WinSCard</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <GenerateManifest>true</GenerateManifest>
-    <TargetName>WinSCard</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Static|x64'">
     <LinkIncremental>false</LinkIncremental>
     <GenerateManifest>true</GenerateManifest>
-    <TargetName>WinSCard</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -244,20 +240,23 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\BonDriver_BDA\DSFilterEnum.h" />
     <ClInclude Include="..\..\..\CardReader\atr.h" />
     <ClInclude Include="..\..\..\CardReader\t1.h" />
     <ClInclude Include="..\..\..\common\common.h" />
+    <ClInclude Include="..\..\..\common\DSFilterEnum.h" />
     <ClInclude Include="..\IT35propset.h" />
     <ClInclude Include="CCOMProc-x3U4.h" />
     <ClInclude Include="WinSCard-x3U4.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\BonDriver_BDA\DSFilterEnum.cpp" />
     <ClCompile Include="..\..\..\CardReader\atr.cpp" />
     <ClCompile Include="..\..\..\CardReader\t1.cpp" />
+    <ClCompile Include="..\..\..\common\DSFilterEnum.cpp" />
     <ClCompile Include="CCOMProc-x3U4.cpp" />
     <ClCompile Include="WinSCard-x3U4.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\doc\WinSCard-x3U4.ini" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

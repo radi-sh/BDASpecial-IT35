@@ -66,30 +66,30 @@ CComProtocolT1::COM_PROTOCOL_T1_ERROR_CODE CComProtocolT1::MakeSendFrame(BYTE Pc
 	*p = SendNAD;	// Node Address
 	CalcEDC(*p, &EDC);
 	if (EnableDetailLog)
-		OutputDebug(L"MakeSendFrame: NAD=0x%x\n", *p);
+		OutputDebug(L"  Tx: NAD=0x%02x\n", *p);
 	p++;
 
 	*p = Pcb;	// Protocol Control Byte
 	CalcEDC(*p, &EDC);
 	if (EnableDetailLog)
-		OutputDebug(L"MakeSendFrame: PCB=0x%x\n", *p);
+		OutputDebug(L"  Tx: PCB=0x%02x\n", *p);
 	p++;
 
 	*p = Len;	// Length
 	CalcEDC(*p, &EDC);
 	if (EnableDetailLog)
-		OutputDebug(L"MakeSendFrame: LEN=0x%x\n", *p);
+		OutputDebug(L"  Tx: LEN=0x%02x\n", *p);
 	p++;
 
 	// Information Field
 	if (Len)
 		if (EnableDetailLog)
-			OutputDebug(L"MakeSendFrame: INF=");
+			OutputDebug(L"  Tx: INF=");
 	for (int i = 0; i < Len; i++) {
 		*p = pInf[i];
 		CalcEDC(*p, &EDC);
 		if (EnableDetailLog)
-			OutputDebug(L"0x%x ", *p);
+			OutputDebug(L"0x%02x ", *p);
 		p++;
 	}
 	if (Len)
@@ -100,18 +100,18 @@ CComProtocolT1::COM_PROTOCOL_T1_ERROR_CODE CComProtocolT1::MakeSendFrame(BYTE Pc
 		// CRC
 		*p = EDC & 0xff;
 		if (EnableDetailLog)
-			OutputDebug(L"MakeSendFrame: EDC(CRC)=0x%x ", *p);
+			OutputDebug(L"  Tx: EDC(CRC)=0x%02x ", *p);
 		p++;
 		*p = EDC >> 8;
 		if (EnableDetailLog)
-			OutputDebug(L"0x%x\n", *p);
+			OutputDebug(L"0x%02x\n", *p);
 		p++;
 	}
 	else {
 		// LRC
 		*p = EDC & 0xff;
 		if (EnableDetailLog)
-			OutputDebug(L"MakeSendFrame: EDC(LRC)=0x%x\n", *p);
+			OutputDebug(L"  Tx: EDC(LRC)=0x%02x\n", *p);
 		p++;
 	}
 
@@ -127,7 +127,7 @@ CComProtocolT1::COM_PROTOCOL_T1_ERROR_CODE CComProtocolT1::ParseRecvdFrame(BYTE 
 	BYTE *p = RecvFrame;
 
 	if (EnableDetailLog)
-		OutputDebug(L"ParseRecvdFrame: NAD=0x%x\n", *p);
+		OutputDebug(L"  Rx: NAD=0x%02x\n", *p);
 	BYTE NAD = *p;		// Node Address
 	if (NAD != RecvNAD) {
 		OutputDebug(L"ParseRecvdFrame: Invalid NAD.\n");
@@ -137,14 +137,14 @@ CComProtocolT1::COM_PROTOCOL_T1_ERROR_CODE CComProtocolT1::ParseRecvdFrame(BYTE 
 	p++;
 
 	if (EnableDetailLog)
-		OutputDebug(L"ParseRecvdFrame: PCB=0x%x\n", *p);
+		OutputDebug(L"  Rx: PCB=0x%02x\n", *p);
 	if (pPcb)
 		*pPcb = *p;		// Protocol Control Byte
 	CalcEDC(*p, &EDC);
 	p++;
 
 	if (EnableDetailLog)
-		OutputDebug(L"ParseRecvdFrame: LEN=0x%x\n", *p);
+		OutputDebug(L"  Rx: LEN=0x%02x\n", *p);
 	if (pLen)
 		*pLen = *p;		// Length
 	if (*p > 254) {
@@ -163,10 +163,10 @@ CComProtocolT1::COM_PROTOCOL_T1_ERROR_CODE CComProtocolT1::ParseRecvdFrame(BYTE 
 	// Information Field
 	if (Len)
 		if (EnableDetailLog)
-			OutputDebug(L"ParseRecvdFrame: INF=");
+			OutputDebug(L"  Rx: INF=");
 	for (int i = 0; i < Len; i++) {
 		if (EnableDetailLog)
-			OutputDebug(L"0x%x ", *p);
+			OutputDebug(L"0x%02x ", *p);
 		if (pInf)
 			pInf[i] = *p;
 		CalcEDC(*p, &EDC);
@@ -179,11 +179,11 @@ CComProtocolT1::COM_PROTOCOL_T1_ERROR_CODE CComProtocolT1::ParseRecvdFrame(BYTE 
 	// LRC & CRC
 	if (EDCType == EDC_TYPE_CRC) {
 		if (EnableDetailLog)
-			OutputDebug(L"ParseRecvdFrame: EDC(CRC)=0x%x 0x%x\n", *p , *(p + 1));
+			OutputDebug(L"  Rx: EDC(CRC)=0x%02x 0x%02x\n", *p , *(p + 1));
 	}
 	else {
 		if (EnableDetailLog)
-			OutputDebug(L"ParseRecvdFrame: EDC(LRC)=0x%x\n", *p);
+			OutputDebug(L"  Rx: EDC(LRC)=0x%02x\n", *p);
 	}
 	if (*p != (EDC & 0xff) && !IgnoreEDCError) {
 		OutputDebug(L"ParseRecvdFrame: EDC does not match.\n");

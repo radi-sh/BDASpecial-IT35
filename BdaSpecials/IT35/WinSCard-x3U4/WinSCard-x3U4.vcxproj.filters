@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="doc">
+      <UniqueIdentifier>{9b9a2e44-e77e-4da3-8d6a-178a7a666b7f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\IT35propset.h">
@@ -30,10 +33,10 @@
     <ClInclude Include="WinSCard-x3U4.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\BonDriver_BDA\DSFilterEnum.h">
+    <ClInclude Include="CCOMProc-x3U4.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="CCOMProc-x3U4.h">
+    <ClInclude Include="..\..\..\common\DSFilterEnum.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
@@ -47,11 +50,16 @@
     <ClCompile Include="WinSCard-x3U4.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\BonDriver_BDA\DSFilterEnum.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="CCOMProc-x3U4.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\common\DSFilterEnum.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\doc\WinSCard-x3U4.ini">
+      <Filter>doc</Filter>
+    </None>
   </ItemGroup>
 </Project>
