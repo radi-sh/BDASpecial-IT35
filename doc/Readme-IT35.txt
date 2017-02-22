@@ -1,8 +1,10 @@
 IT9135系チューナー用BDASpecialプラグイン（今のところPX-W3U4/PX-Q3U4専用）
+  PX-W3U4/PX-Q3U4内臓カードリーダー用WinSCard.dll付属
 
 【これは何？】
 今のところPlex社製USB接続(Box型)3波チューナーPX-W3U4/PX-Q3U4専用のBonDriver_BDA用BDASpecialプラグインです。
 BonDriver_BDA.dllと組み合わせて使用します。
+また、付属のWinSCard.dllを使用することにより、PX-W3U4/PX-Q3U4内臓カードリーダーを任意のアプリで利用することができます。
 
 【動作環境】
 Windows XP以降 (x86/x64)
@@ -46,6 +48,12 @@ BonDriver_BDA付属のReadme-BonDriver_BDAを参考に、インストールし�
   BonDriver_PX_x3U4_T1.ini
   IT35.dll
 
+5. WinSCard.dllとiniファイルの配置
+PX-W3U4/PX-Q3U4内蔵のカードリーダを使用しない場合はこの作業は必要ありません。
+・使用するアプリのexeがあるフォルダに、WinSCard.dllとWinSCard.iniを配置
+・必要に応じてWinSCard.iniの内容を変更
+  付属のiniファイルはPX-W3U4用ですのでPX-Q3U4で使用する場合はiniファイルの変更が必要です。
+
 【サポートとか】
 ・最新バージョンとソースファイルの配布場所
 https://github.com/radi-sh/BDASpecial-PlexPX/releases
@@ -54,8 +62,8 @@ https://github.com/radi-sh/BDASpecial-PlexPX/releases
 専用のサポート場所はありません。
 下記2chスレに書込むとそのうち何か反応があるかもしれません。
 (リリース時現在)
-PX-W3U3 Part19【W3U2・S3U2・S3U・W3U4・Q3U4】
-http://echo.2ch.net/test/read.cgi/avi/1484700777/
+PX-W3U3 Part20【W3U2・S3U2・S3U・W3U4・Q3U4】
+http://echo.2ch.net/test/read.cgi/avi/1485896874/
 作者は多忙を言い訳にあまりスレを見ていない傾向に有りますがご容赦ください。
 
 【免責事項】
