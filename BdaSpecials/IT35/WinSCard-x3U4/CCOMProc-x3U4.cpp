@@ -22,6 +22,34 @@ using namespace std;
 
 #include "CCOMProc-x3U4.h"
 
+static DWORD WaitForMultipleObjectsWithMessageLoop(DWORD nCount, LPHANDLE pHandles, BOOL fWaitAll, DWORD dwMilliseconds)
+{
+	DWORD dwRet;
+	MSG msg;
+
+	while (1)
+	{
+		dwRet = MsgWaitForMultipleObjects(nCount, pHandles, fWaitAll, dwMilliseconds, QS_ALLINPUT);
+
+		if (dwRet == WAIT_OBJECT_0 + nCount) {
+			// メッセージのディスパッチ
+			while (PeekMessage(&msg, NULL, NULL, NULL, PM_REMOVE)) {
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
+		}
+		else {
+			// WaitForMultipleObjects()の応答
+			return dwRet;
+		}
+	}
+}
+
+static DWORD WaitForSingleObjectWithMessageLoop(HANDLE hHandle, DWORD dwMilliseconds)
+{
+	return WaitForMultipleObjectsWithMessageLoop(1, &hHandle, FALSE, dwMilliseconds);
+}
+
 CCOMProc::CCOMProc(void)
 	: hThread(NULL),
 	hThreadInitComp(NULL),
@@ -371,7 +399,9 @@ DWORD WINAPI CCOMProc::COMProcThread(LPVOID lpParameter)
 	OutputDebug(L"COMProcThread: Thread created.\n");
 
 	// COM初期化
+	OutputDebug(L"COMProcThread: Doing CoInitializeEx().\n");
 	hr = ::CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE | COINIT_SPEED_OVER_MEMORY);
+	OutputDebug(L"COMProcThread: CoInitializeEx() returned 0x%x.\n", hr);
 
 	try {
 		wstring name;
@@ -420,10 +450,11 @@ DWORD WINAPI CCOMProc::COMProcThread(LPVOID lpParameter)
 	};
 
 	while (!terminate) {
-		DWORD ret = ::WaitForMultipleObjects(2, h, FALSE, INFINITE);
+		DWORD ret = WaitForMultipleObjectsWithMessageLoop(2, h, FALSE, INFINITE);
 		switch (ret)
 		{
 		case WAIT_OBJECT_0:
+			OutputDebug(L"COMProcThread: Terminate was requested.\n");
 			terminate = TRUE;
 			break;
 
@@ -491,6 +522,7 @@ DWORD WINAPI CCOMProc::COMProcThread(LPVOID lpParameter)
 	SAFE_RELEASE(pIKsPropertySet);
 	SAFE_RELEASE(pTunerDevice);
 
+	OutputDebug(L"COMProcThread: Doing CoUninitialize().\n");
 	::CoUninitialize();
 	OutputDebug(L"COMProcThread: Thread terminated.\n");
 
