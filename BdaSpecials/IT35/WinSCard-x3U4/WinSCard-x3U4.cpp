@@ -641,7 +641,7 @@ CComProtocolT1x3U4::COM_PROTOCOL_T1_ERROR_CODE CComProtocolT1x3U4::RxBlock(void)
 			OutputDebug(L"RxBlock: Retry time out for it35_IsUartReady().\n");
 			return COM_PROTOCOL_T1_E_NOT_READY;
 		}
-		Sleep(10);
+		::Sleep(10);
 	}
 	DWORD len = sizeof(RecvFrame);
 	if (FAILED(hr = COMProc.GetUARTData(RecvFrame, &len))) {
@@ -666,7 +666,7 @@ void CComProtocolT1x3U4::SetLastTickCount(void) {
 void CComProtocolT1x3U4::WaitGuardInterval(void) {
 	DWORD t = ::GetTickCount() - LastTickCount;
 	if (t < GuardInterval)
-		Sleep(GuardInterval - t);
+		::Sleep(GuardInterval - t);
 }
 
 LockProc::LockProc(DWORD dwMilliSeconds)
