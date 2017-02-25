@@ -16,13 +16,13 @@
 #include "IT35propset.h"
 #include "DSFilterEnum.h"
 
+#include "CCOMProc-x3U4.h"
+
 #include "WaitWithMsg.h"
 
 #pragma comment(lib, "Strmiids.lib")
 
 using namespace std;
-
-#include "CCOMProc-x3U4.h"
 
 CCOMProc::CCOMProc(void)
 	: hThread(NULL),

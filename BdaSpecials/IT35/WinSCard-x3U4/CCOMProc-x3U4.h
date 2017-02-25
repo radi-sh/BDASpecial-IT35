@@ -53,14 +53,14 @@ private:
 	COMReqParam Param;				// パラメータ
 	HRESULT RetCode;				// 終了コード
 	CRITICAL_SECTION csLock;		// 排他用
-	wstring TunerFriendlyName;
-	wstring TunerDisplayName;
+	std::wstring TunerFriendlyName;
+	std::wstring TunerDisplayName;
 
 public:
 	CCOMProc(void);
 	~CCOMProc(void);
-	void SetTunerFriendlyName(wstring name);
-	wstring GetTunerDisplayName(void);
+	void SetTunerFriendlyName(std::wstring name);
+	std::wstring GetTunerDisplayName(void);
 	BOOL CreateThread(void);
 	void TerminateThread(void);
 	HRESULT DetectCard(BOOL *Present);

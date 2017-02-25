@@ -4,10 +4,10 @@
 #include "atr.h"
 #include "t1.h"
 
-using namespace std;
-
 #include "WinSCard-x3U4.h"
 #include "CCOMProc-x3U4.h"
+
+using namespace std;
 
 FILE *g_fpLog = NULL;
 
