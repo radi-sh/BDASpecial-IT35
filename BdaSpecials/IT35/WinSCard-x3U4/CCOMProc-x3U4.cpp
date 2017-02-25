@@ -16,39 +16,13 @@
 #include "IT35propset.h"
 #include "DSFilterEnum.h"
 
+#include "WaitWithMsg.h"
+
 #pragma comment(lib, "Strmiids.lib")
 
 using namespace std;
 
 #include "CCOMProc-x3U4.h"
-
-static DWORD WaitForMultipleObjectsWithMessageLoop(DWORD nCount, LPHANDLE pHandles, BOOL fWaitAll, DWORD dwMilliseconds)
-{
-	DWORD dwRet;
-	MSG msg;
-
-	while (1)
-	{
-		dwRet = MsgWaitForMultipleObjects(nCount, pHandles, fWaitAll, dwMilliseconds, QS_ALLINPUT);
-
-		if (dwRet == WAIT_OBJECT_0 + nCount) {
-			// メッセージのディスパッチ
-			while (PeekMessage(&msg, NULL, NULL, NULL, PM_REMOVE)) {
-				TranslateMessage(&msg);
-				DispatchMessage(&msg);
-			}
-		}
-		else {
-			// WaitForMultipleObjects()の応答
-			return dwRet;
-		}
-	}
-}
-
-static DWORD WaitForSingleObjectWithMessageLoop(HANDLE hHandle, DWORD dwMilliseconds)
-{
-	return WaitForMultipleObjectsWithMessageLoop(1, &hHandle, FALSE, dwMilliseconds);
-}
 
 CCOMProc::CCOMProc(void)
 	: hThread(NULL),

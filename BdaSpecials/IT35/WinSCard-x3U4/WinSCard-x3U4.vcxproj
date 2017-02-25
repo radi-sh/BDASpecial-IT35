@@ -244,6 +244,7 @@
     <ClInclude Include="..\..\..\CardReader\t1.h" />
     <ClInclude Include="..\..\..\common\common.h" />
     <ClInclude Include="..\..\..\common\DSFilterEnum.h" />
+    <ClInclude Include="..\..\..\common\WaitWithMsg.h" />
     <ClInclude Include="..\IT35propset.h" />
     <ClInclude Include="CCOMProc-x3U4.h" />
     <ClInclude Include="WinSCard-x3U4.h" />

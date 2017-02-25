@@ -39,6 +39,9 @@
     <ClInclude Include="..\..\..\common\DSFilterEnum.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\common\WaitWithMsg.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\CardReader\atr.cpp">
