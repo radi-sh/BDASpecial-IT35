@@ -1,5 +1,6 @@
 IT9135系チューナー用BDASpecialプラグイン（今のところPX-W3U4/PX-Q3U4専用）
-  PX-W3U4/PX-Q3U4内臓カードリーダー用WinSCard.dll付属
+  PX-W3U4/PX-Q3U4内蔵カードリーダー用WinSCard.dll付属
+  PX-W3U4/PX-Q3U4付属リモコン用TVTestプラグイン付属
 
 【これは何？】
 今のところPlex社製USB接続(Box型)3波チューナーPX-W3U4/PX-Q3U4専用のBonDriver_BDA用BDASpecialプラグインです。
@@ -53,6 +54,13 @@ PX-W3U4/PX-Q3U4内蔵のカードリーダを使用しない場合はこの作�
 ・使用するアプリのexeがあるフォルダに、WinSCard.dllとWinSCard.iniを配置
 ・必要に応じてWinSCard.iniの内容を変更
   付属のiniファイルはPX-W3U4用ですのでPX-Q3U4で使用する場合はiniファイルの変更が必要です。
+
+6. TVTest用プラグインの配置
+TVTestでPX-W3U4/PX-Q3U4付属リモコンを使用する場合以外はこの作業は必要ありません。
+・TVTestのPluginsフォルダに、x3U4Remocon.tvtpとx3U4Remocon.iniを配置
+・必要に応じてx3U4Remocon.iniの内容を変更
+  付属のiniファイルはPX-W3U4用ですのでPX-Q3U4で使用する場合はiniファイルの変更が必要です。
+・TVTestを起動し、プラグインの有効化とリモコンボタンの割り当て設定を行う
 
 【サポートとか】
 ・最新バージョンとソースファイルの配布場所

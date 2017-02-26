@@ -16,11 +16,13 @@
 #include "IT35propset.h"
 #include "DSFilterEnum.h"
 
+#include "CCOMProc-x3U4.h"
+
+#include "WaitWithMsg.h"
+
 #pragma comment(lib, "Strmiids.lib")
 
 using namespace std;
-
-#include "CCOMProc-x3U4.h"
 
 CCOMProc::CCOMProc(void)
 	: hThread(NULL),
@@ -371,7 +373,9 @@ DWORD WINAPI CCOMProc::COMProcThread(LPVOID lpParameter)
 	OutputDebug(L"COMProcThread: Thread created.\n");
 
 	// COMèâä˙âª
+	OutputDebug(L"COMProcThread: Doing CoInitializeEx().\n");
 	hr = ::CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE | COINIT_SPEED_OVER_MEMORY);
+	OutputDebug(L"COMProcThread: CoInitializeEx() returned 0x%x.\n", hr);
 
 	try {
 		wstring name;
@@ -420,10 +424,11 @@ DWORD WINAPI CCOMProc::COMProcThread(LPVOID lpParameter)
 	};
 
 	while (!terminate) {
-		DWORD ret = ::WaitForMultipleObjects(2, h, FALSE, INFINITE);
+		DWORD ret = WaitForMultipleObjectsWithMessageLoop(2, h, FALSE, INFINITE);
 		switch (ret)
 		{
 		case WAIT_OBJECT_0:
+			OutputDebug(L"COMProcThread: Terminate was requested.\n");
 			terminate = TRUE;
 			break;
 
@@ -491,6 +496,7 @@ DWORD WINAPI CCOMProc::COMProcThread(LPVOID lpParameter)
 	SAFE_RELEASE(pIKsPropertySet);
 	SAFE_RELEASE(pTunerDevice);
 
+	OutputDebug(L"COMProcThread: Doing CoUninitialize().\n");
 	::CoUninitialize();
 	OutputDebug(L"COMProcThread: Thread terminated.\n");
 

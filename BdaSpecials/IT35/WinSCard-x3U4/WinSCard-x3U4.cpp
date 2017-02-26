@@ -4,10 +4,10 @@
 #include "atr.h"
 #include "t1.h"
 
-using namespace std;
-
 #include "WinSCard-x3U4.h"
 #include "CCOMProc-x3U4.h"
+
+using namespace std;
 
 FILE *g_fpLog = NULL;
 
@@ -19,6 +19,8 @@ static const CHAR LIST_READERS_A[] = "Plex PX-x3U4 Card Reader 0\0";
 static const WCHAR LIST_READERS_W[] = L"Plex PX-x3U4 Card Reader 0\0";
 
 static BYTE IFSD = 254;						// IFD側の最大受信可能ブロックサイズ
+
+static BOOL l_bInitialized = FALSE;
 
 static HANDLE l_hStartedEvent = NULL;
 static HMODULE l_hModule = NULL;
@@ -65,6 +67,9 @@ static void ProcATR(BYTE *atr) {
 }
 
 static BOOL InitDevice(void) {
+	if (l_bInitialized)
+		return TRUE;
+
 	OutputDebug(L"InitDevice: Started.\n");
 
 	if (!COMProc.CreateThread()) {
@@ -130,6 +135,8 @@ static BOOL InitDevice(void) {
 			ProcATR(l_pShMem->ATR);
 			OutputDebug(L"InitDevice: ATR was read from shared memory.\n");
 		}
+
+		l_bInitialized = TRUE;
 
 		OutputDebug(L"InitDevice: Completed.\n");
 		return TRUE;
@@ -641,7 +648,7 @@ CComProtocolT1x3U4::COM_PROTOCOL_T1_ERROR_CODE CComProtocolT1x3U4::RxBlock(void)
 			OutputDebug(L"RxBlock: Retry time out for it35_IsUartReady().\n");
 			return COM_PROTOCOL_T1_E_NOT_READY;
 		}
-		Sleep(10);
+		::Sleep(10);
 	}
 	DWORD len = sizeof(RecvFrame);
 	if (FAILED(hr = COMProc.GetUARTData(RecvFrame, &len))) {
@@ -666,7 +673,7 @@ void CComProtocolT1x3U4::SetLastTickCount(void) {
 void CComProtocolT1x3U4::WaitGuardInterval(void) {
 	DWORD t = ::GetTickCount() - LastTickCount;
 	if (t < GuardInterval)
-		Sleep(GuardInterval - t);
+		::Sleep(GuardInterval - t);
 }
 
 LockProc::LockProc(DWORD dwMilliSeconds)
