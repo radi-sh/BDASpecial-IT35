@@ -7,3 +7,9 @@
 【2017-02-22】
 ・iniファイルのIT35セクションでDebugLog=1を指定しても有効にならなかった問題を修正
 ・WinSCard.dll(WinSCard-x3U4) を追加
+
+【2017-02-26】
+・WinSCard.dllで、SCardConnect() が呼ばれる度に スレッドが多重起動されていた点を修正
+・WinSCard.dllで、CoInitialize したスレッドでメッセージのディスパッチ処理を行うように変更
+・PX-W3U4/PX-Q3U4付属リモコン用TVTestプラグインを追加
+
