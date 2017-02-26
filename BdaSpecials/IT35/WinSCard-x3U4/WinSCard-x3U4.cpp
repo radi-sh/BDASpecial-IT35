@@ -20,6 +20,8 @@ static const WCHAR LIST_READERS_W[] = L"Plex PX-x3U4 Card Reader 0\0";
 
 static BYTE IFSD = 254;						// IFD側の最大受信可能ブロックサイズ
 
+static BOOL l_bInitialized = FALSE;
+
 static HANDLE l_hStartedEvent = NULL;
 static HMODULE l_hModule = NULL;
 static HANDLE l_hSemaphore = NULL;
@@ -65,6 +67,9 @@ static void ProcATR(BYTE *atr) {
 }
 
 static BOOL InitDevice(void) {
+	if (l_bInitialized)
+		return TRUE;
+
 	OutputDebug(L"InitDevice: Started.\n");
 
 	if (!COMProc.CreateThread()) {
@@ -130,6 +135,8 @@ static BOOL InitDevice(void) {
 			ProcATR(l_pShMem->ATR);
 			OutputDebug(L"InitDevice: ATR was read from shared memory.\n");
 		}
+
+		l_bInitialized = TRUE;
 
 		OutputDebug(L"InitDevice: Completed.\n");
 		return TRUE;
