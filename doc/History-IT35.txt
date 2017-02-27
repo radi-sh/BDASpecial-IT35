@@ -13,3 +13,6 @@
 ・WinSCard.dllで、CoInitialize したスレッドでメッセージのディスパッチ処理を行うように変更
 ・PX-W3U4/PX-Q3U4付属リモコン用TVTestプラグインを追加
 
+【2017-02-27】
+・TVTestプラグインが32bit版のTVTestに認識されなかった問題を修正
+
