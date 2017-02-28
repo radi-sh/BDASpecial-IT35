@@ -21,7 +21,7 @@ static const WCHAR LIST_READERS_W[] = L"Plex PX-x3U4 Card Reader 0\0";
 static BYTE IFSD = 254;						// IFD側の最大受信可能ブロックサイズ
 
 static BOOL l_bInitialized = FALSE;
-
+static DWORD l_dwEstablishedContext = 0;
 static HANDLE l_hStartedEvent = NULL;
 static HMODULE l_hModule = NULL;
 static HANDLE l_hSemaphore = NULL;
@@ -327,7 +327,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 		break;
 
 	case DLL_PROCESS_DETACH:
-		COMProc.TerminateThread();
 		CloseAllHandle();
 		if (l_hStartedEvent) {
 			try {
@@ -408,6 +407,9 @@ LONG WINAPI SCardDisconnect_(SCARDHANDLE hCard, DWORD dwDisposition)
 
 LONG WINAPI SCardEstablishContext_(DWORD dwScope, LPCVOID pvReserved1, LPCVOID pvReserved2, LPSCARDCONTEXT phContext)
 {
+	l_dwEstablishedContext++;
+	OutputDebug(L"SCardEstablishContext: Count=%d.\n", l_dwEstablishedContext);
+
 	*phContext = DUMMY_SCARDCONTEXT;
 
 	return SCARD_S_SUCCESS;
@@ -469,6 +471,15 @@ LONG WINAPI SCardListReadersW_(SCARDCONTEXT hContext, LPCWSTR mszGroups, LPWSTR 
 
 LONG WINAPI SCardReleaseContext_(SCARDCONTEXT hContext)
 {
+	if (l_dwEstablishedContext)
+		l_dwEstablishedContext--;
+	OutputDebug(L"SCardReleaseContext: Count=%d.\n", l_dwEstablishedContext);
+
+	if (!l_dwEstablishedContext) {
+		COMProc.TerminateThread();
+		CloseAllHandle();
+	}
+
 	return SCARD_S_SUCCESS;
 }
 

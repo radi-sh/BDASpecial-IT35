@@ -39,7 +39,12 @@ CCOMProc::CCOMProc(void)
 
 CCOMProc::~CCOMProc(void)
 {
-	TerminateThread();
+	if (hThread) {
+		::SetEvent(hTerminateRequest);
+		::WaitForSingleObject(hThread, 1000);
+		::CloseHandle(hThread);
+		hThread = NULL;
+	}
 	if (hThreadInitComp) {
 		::CloseHandle(hThreadInitComp);
 		hThreadInitComp = NULL;
