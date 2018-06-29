@@ -474,7 +474,7 @@ static inline HRESULT it35_GetUartData(IKsPropertySet *pIKsPropertySet, BYTE *pR
 }
 
 // UART 送信データ設定
-static inline HRESULT it35_SentUart(IKsPropertySet *pIKsPropertySet, BYTE *pSendBuff, DWORD dwLength)
+static inline HRESULT it35_SentUart(IKsPropertySet *pIKsPropertySet, const BYTE *pSendBuff, DWORD dwLength)
 {
 	DevIoCtlDataSet dataset;
 

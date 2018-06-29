@@ -452,7 +452,7 @@ DWORD WINAPI CCOMProc::COMProcThread(LPVOID lpParameter)
 				break;
 
 			case eCOMReqSendUART:
-				pCOMProc->RetCode = it35_SentUart(pIKsPropertySet, (BYTE*)(pCOMProc->Param.SendUART.pcbySendBuffer), pCOMProc->Param.SendUART.dwSendLength);
+				pCOMProc->RetCode = it35_SentUart(pIKsPropertySet, pCOMProc->Param.SendUART.pcbySendBuffer, pCOMProc->Param.SendUART.dwSendLength);
 				::SetEvent(pCOMProc->hEndEvent);
 				break;
 
