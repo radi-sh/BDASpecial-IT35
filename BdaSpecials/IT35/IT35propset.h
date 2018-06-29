@@ -7,12 +7,12 @@
 static const GUID KSPROPSETID_BdaFrequencyFilter = { 0x71985f47, 0x1ca1, 0x11d3,{ 0x9c, 0xc8, 0x0, 0xc0, 0x4f, 0x79, 0x71, 0xe0 } };
 
 enum KSPROPERTY_BDA_FREQUENCY_FILTER {
-	KSPROPERTY_BDA_RF_TUNER_FREQUENCY = 0,				// get/put
-	KSPROPERTY_BDA_RF_TUNER_POLARITY,					// get/put
-	KSPROPERTY_BDA_RF_TUNER_RANGE,						// get/put
+	KSPROPERTY_BDA_RF_TUNER_FREQUENCY = 0,				// get/set
+	KSPROPERTY_BDA_RF_TUNER_POLARITY,					// get/set
+	KSPROPERTY_BDA_RF_TUNER_RANGE,						// get/set
 	KSPROPERTY_BDA_RF_TUNER_TRANSPONDER,				// not supported
-	KSPROPERTY_BDA_RF_TUNER_BANDWIDTH,					// get/put
-	KSPROPERTY_BDA_RF_TUNER_FREQUENCY_MULTIPLIER,		// get/put
+	KSPROPERTY_BDA_RF_TUNER_BANDWIDTH,					// get/set
+	KSPROPERTY_BDA_RF_TUNER_FREQUENCY_MULTIPLIER,		// get/set
 	KSPROPERTY_BDA_RF_TUNER_CAPS,						// not supported
 	KSPROPERTY_BDA_RF_TUNER_SCAN_STATUS,				// not supported
 	KSPROPERTY_BDA_RF_TUNER_STANDARD,					// not supported
@@ -32,13 +32,13 @@ enum KSPROPERTY_BDA_SIGNAL_STATS {
 static const GUID KSPROPSETID_BdaDigitalDemodulator = { 0xef30f379, 0x985b, 0x4d10,{ 0xb6, 0x40, 0xa7, 0x9d, 0x5e, 0x4, 0xe1, 0xe0 } };
 
 enum KSPROPERTY_BDA_DIGITAL_DEMODULATOR {
-	KSPROPERTY_BDA_MODULATION_TYPE = 0,					// get/put
-	KSPROPERTY_BDA_INNER_FEC_TYPE,						// get/put
-	KSPROPERTY_BDA_INNER_FEC_RATE,						// get/put
-	KSPROPERTY_BDA_OUTER_FEC_TYPE,						// get/put
-	KSPROPERTY_BDA_OUTER_FEC_RATE,						// get/put
-	KSPROPERTY_BDA_SYMBOL_RATE,							// get/put
-	KSPROPERTY_BDA_SPECTRAL_INVERSION,					// get/put
+	KSPROPERTY_BDA_MODULATION_TYPE = 0,					// get/set
+	KSPROPERTY_BDA_INNER_FEC_TYPE,						// get/set
+	KSPROPERTY_BDA_INNER_FEC_RATE,						// get/set
+	KSPROPERTY_BDA_OUTER_FEC_TYPE,						// get/set
+	KSPROPERTY_BDA_OUTER_FEC_RATE,						// get/set
+	KSPROPERTY_BDA_SYMBOL_RATE,							// get/set
+	KSPROPERTY_BDA_SPECTRAL_INVERSION,					// get/set
 	KSPROPERTY_BDA_GUARD_INTERVAL,						// not supported
 	KSPROPERTY_BDA_TRANSMISSION_MODE,					// not supported
 	KSPROPERTY_BDA_ROLL_OFF,							// not supported
@@ -49,17 +49,17 @@ enum KSPROPERTY_BDA_DIGITAL_DEMODULATOR {
 static const GUID KSPROPSETID_BdaLNBInfo = { 0x992cf102, 0x49f9, 0x4719,{ 0xa6, 0x64, 0xc4, 0xf2, 0x3e, 0x24, 0x8, 0xf4 } };
 
 enum KSPROPERTY_BDA_LNB_INFO {
-	KSPROPERTY_BDA_LNB_LOF_LOW_BAND = 0,				// get/put
-	KSPROPERTY_BDA_LNB_LOF_HIGH_BAND,					// get/put
-	KSPROPERTY_BDA_LNB_SWITCH_FREQUENCY,				// get/put
+	KSPROPERTY_BDA_LNB_LOF_LOW_BAND = 0,				// get/set
+	KSPROPERTY_BDA_LNB_LOF_HIGH_BAND,					// get/set
+	KSPROPERTY_BDA_LNB_SWITCH_FREQUENCY,				// get/set
 };
 
 static const GUID KSPROPSETID_BdaPIDFilter = { 0xd0a67d65, 0x8df, 0x4fec,{ 0x85, 0x33, 0xe5, 0xb5, 0x50, 0x41, 0xb, 0x85 } };
 
 enum KSPROPERTY_BDA_PIDFILTER {
-	KSPROPERTY_BDA_PIDFILTER_MAP_PIDS = 0,				// put only
-	KSPROPERTY_BDA_PIDFILTER_UNMAP_PIDS,				// put only
-	KSPROPERTY_BDA_PIDFILTER_LIST_PIDS,					// put pnly
+	KSPROPERTY_BDA_PIDFILTER_MAP_PIDS = 0,				// set only
+	KSPROPERTY_BDA_PIDFILTER_UNMAP_PIDS,				// set only
+	KSPROPERTY_BDA_PIDFILTER_LIST_PIDS,					// set pnly
 };
 
 static const GUID KSMETHODSETID_BdaChangeSync = { 0xfd0a5af3, 0xb41d, 0x11d2,{ 0x9c, 0x95, 0x0, 0xc0, 0x4f, 0x79, 0x71, 0xe0 } };
@@ -89,20 +89,20 @@ static const GUID KSPROPSETID_IteExtension = { 0xc6efe5eb, 0x855a, 0x4f1b,{ 0xb7
 
 // ITE 拡張プロパティID
 enum KSPROPERTY_ITE_EXTENSION {
-	KSPROPERTY_ITE_EX_BULK_DATA = 0,					// get/put
-	KSPROPERTY_ITE_EX_BULK_DATA_NB,						// get/put
-	KSPROPERTY_ITE_EX_PID_FILTER_ON_OFF,				// put only
-	KSPROPERTY_ITE_EX_BAND_WIDTH,						// get/put
+	KSPROPERTY_ITE_EX_BULK_DATA = 0,					// get/set
+	KSPROPERTY_ITE_EX_BULK_DATA_NB,						// get/set
+	KSPROPERTY_ITE_EX_PID_FILTER_ON_OFF,				// set only
+	KSPROPERTY_ITE_EX_BAND_WIDTH,						// get/set
 	KSPROPERTY_ITE_EX_MERCURY_DRIVER_INFO,				// get only
 	KSPROPERTY_ITE_EX_MERCURY_DEVICE_INFO,				// get only
-	KSPROPERTY_ITE_EX_TS_DATA,							// get/put
+	KSPROPERTY_ITE_EX_TS_DATA,							// get/set
 	KSPROPERTY_ITE_EX_OVL_CNT,							// get only
-	KSPROPERTY_ITE_EX_FREQ,								// get/put
-	KSPROPERTY_ITE_EX_RESET_USB,						// put only
-	KSPROPERTY_ITE_EX_MERCURY_REG,						// get/put
-	KSPROPERTY_ITE_EX_MERCURY_PVBER,					// get/put
-	KSPROPERTY_ITE_EX_MERCURY_REC_LEN,					// get/put
-	KSPROPERTY_ITE_EX_MERCURY_EEPROM,					// get/put
+	KSPROPERTY_ITE_EX_FREQ,								// get/set
+	KSPROPERTY_ITE_EX_RESET_USB,						// set only
+	KSPROPERTY_ITE_EX_MERCURY_REG,						// get/set
+	KSPROPERTY_ITE_EX_MERCURY_PVBER,					// get/set
+	KSPROPERTY_ITE_EX_MERCURY_REC_LEN,					// get/set
+	KSPROPERTY_ITE_EX_MERCURY_EEPROM,					// get/set
 	KSPROPERTY_ITE_EX_MERCURY_IR,						// get only	(ERROR_NOT_SUPORTED)
 	KSPROPERTY_ITE_EX_MERCURY_SIGNAL_STRENGTH,			// get only
 	KSPROPERTY_ITE_EX_CHANNEL_MODULATION = 99,			// get only
@@ -113,8 +113,8 @@ static const GUID KSPROPSETID_DvbsIoCtl = { 0xf23fac2d, 0xe1af, 0x48e0,{ 0x8b, 0
 
 // DVB-S IO コントロール プロパティID
 enum KSPROPERTY_DVBS_IO_CTL {
-	KSPROPERTY_DVBS_IO_LNB_POWER = 0,					// get/put
-	KSPROPERTY_DVBS_IO_DiseqcLoad,						// put only
+	KSPROPERTY_DVBS_IO_LNB_POWER = 0,					// get/set
+	KSPROPERTY_DVBS_IO_DiseqcLoad,						// set only
 };
 
 // 拡張 IO コントロール プロパティセット GUID
@@ -122,11 +122,11 @@ static const GUID KSPROPSETID_ExtIoCtl = { 0xf23fac2d, 0xe1af, 0x48e0,{ 0x8b, 0x
 
 // 拡張 IO コントロール プロパティ ID
 enum KSPROPERTY_EXT_IO_CTL {
-	KSPROPERTY_EXT_IO_DRV_DATA = 0,						// get/put
-	KSPROPERTY_EXT_IO_DEV_IO_CTL,						// get/put
+	KSPROPERTY_EXT_IO_DRV_DATA = 0,						// get/set
+	KSPROPERTY_EXT_IO_DEV_IO_CTL,						// get/set
 	KSPROPERTY_EXT_IO_UNUSED50 = 50,					// not used
 	KSPROPERTY_EXT_IO_UNUSED51 = 51,					// not used
-	KSPROPERTY_EXT_IO_ISDBT_IO_CTL = 200,				// put only
+	KSPROPERTY_EXT_IO_ISDBT_IO_CTL = 200,				// set only
 };
 
 // 拡張 IO コントロール KSPROPERTY_EXT_IO_DRV_DATA 用ファンクションコード
@@ -216,7 +216,7 @@ static const GUID KSPROPSETID_PrivateIoCtl = { 0xede22531, 0x92e8, 0x4957,{ 0x9d
 
 // プライベート IO コントロール プロパティ ID
 enum KSPROPERTY_PRIVATE_IO_CTL {
-	KSPROPERTY_PRIVATE_IO_DIGIBEST_TUNER = 0,			// put only
+	KSPROPERTY_PRIVATE_IO_DIGIBEST_TUNER = 0,			// set only
 };
 
 // プライベート IO コントロール KSPROPERTY_PRIVATE_IO_DIGIBEST_TUNER 用ファンクションコード
