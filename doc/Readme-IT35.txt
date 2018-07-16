@@ -1,11 +1,11 @@
-IT9135系チューナー用BDASpecialプラグイン（今のところPX-W3U4/PX-Q3U4専用）
-  PX-W3U4/PX-Q3U4内蔵カードリーダー用WinSCard.dll付属
+IT9135系チューナー用BDASpecialプラグイン（PX-W3U4/PX-Q3U4/PX-W3PE4/PX-Q3PE4専用）
+  PX-W3U4/PX-Q3U4/PX-W3PE4/PX-Q3PE4内蔵カードリーダー用WinSCard.dll付属
   PX-W3U4/PX-Q3U4付属リモコン用TVTestプラグイン付属
 
 【これは何？】
-今のところPlex社製USB接続(Box型)3波チューナーPX-W3U4/PX-Q3U4専用のBonDriver_BDA用BDASpecialプラグインです。
+Plex社製USB接続(Box型/PCI-Ex型)3波チューナーPX-W3U4/PX-Q3U4/PX-W3PE4/PX-Q3PE4専用のBonDriver_BDA用BDASpecialプラグインです。
 BonDriver_BDA.dllと組み合わせて使用します。
-また、付属のWinSCard.dllを使用することにより、PX-W3U4/PX-Q3U4内臓カードリーダーを任意のアプリで利用することができます。
+また、付属のWinSCard.dllを使用することにより、PX-W3U4/PX-Q3U4/PX-W3PE4/PX-Q3PE4内臓カードリーダーを任意のアプリで利用することができます。
 
 【動作環境】
 Windows XP以降 (x86/x64)
@@ -14,13 +14,14 @@ Windows XP以降 (x86/x64)
 Plex社製の下記のチューナーに対応しています（たぶん）。
   PX-W3U4
   PX-Q3U4
+  PX-W3PE4
+  PX-Q3PE4
 同じPlex社製のPXシリーズでもDigibest社OEM製品以外のものはこのBDASpecialプラグインの対象外です。
 
 【使い方】
 1. BonDriver_BDAの入手
 下記URLより、最新バージョンのBonDriver_BDAを入手してください。
 https://github.com/radi-sh/BonDriver_BDA/releases
-2017-01-22より前のバージョンでは、Signal Levelの取得に問題が有ります。
 
 2. x86/x64と通常版/ランタイム内蔵版の選択
 BonDriver_BDA付属のReadme-BonDriver_BDAを参考に、BonDriver_BDAと同じものを選択してください。
@@ -50,10 +51,10 @@ BonDriver_BDA付属のReadme-BonDriver_BDAを参考に、インストールし�
   IT35.dll
 
 5. WinSCard.dllとiniファイルの配置
-PX-W3U4/PX-Q3U4内蔵のカードリーダを使用しない場合はこの作業は必要ありません。
+PX-W3U4/PX-Q3U4/PX-W3PE4/PX-Q3PE4内蔵のカードリーダを使用しない場合はこの作業は必要ありません。
 ・使用するアプリのexeがあるフォルダに、WinSCard.dllとWinSCard.iniを配置
 ・必要に応じてWinSCard.iniの内容を変更
-  付属のiniファイルはPX-W3U4用ですのでPX-Q3U4で使用する場合はiniファイルの変更が必要です。
+  付属のiniファイルはPX-W3U4用ですのでPX-Q3U4/PX-W3PE4/PX-Q3PE4で使用する場合はiniファイルの変更が必要です。
 
 6. TVTest用プラグインの配置
 TVTestでPX-W3U4/PX-Q3U4付属リモコンを使用する場合以外はこの作業は必要ありません。
@@ -68,10 +69,7 @@ https://github.com/radi-sh/BDASpecial-PlexPX/releases
 
 ・不具合報告等
 専用のサポート場所はありません。
-下記2chスレに書込むとそのうち何か反応があるかもしれません。
-(リリース時現在)
-PX-W3U3 Part20【W3U2・S3U2・S3U・W3U4・Q3U4】
-http://echo.2ch.net/test/read.cgi/avi/1485896874/
+5chの映像制作板の該当スレを探して書込むとそのうち何か反応があるかもしれません。
 作者は多忙を言い訳にあまりスレを見ていない傾向に有りますがご容赦ください。
 
 【免責事項】
