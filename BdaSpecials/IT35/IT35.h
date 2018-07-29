@@ -2,7 +2,7 @@
 
 #include "IBdaSpecials2.h"
 
-class CIT35Specials : public IBdaSpecials2a1
+class CIT35Specials : public IBdaSpecials2a2
 {
 public:
 	CIT35Specials(HMODULE hMySelf, CComPtr<IBaseFilter> pTunerDevice);
@@ -20,7 +20,7 @@ public:
 	const HRESULT Set22KHz(long nTone);
 	const HRESULT LockChannel(const TuningParam *pTuningParm);
 
-	const HRESULT ReadIniFile(WCHAR *szIniFilePath);
+	const HRESULT ReadIniFile(const WCHAR *szIniFilePath);
 	const HRESULT IsDecodingNeeded(BOOL *pbAns);
 	const HRESULT Decode(BYTE *pBuf, DWORD dwSize);
 	const HRESULT GetSignalStrength(float *fVal);

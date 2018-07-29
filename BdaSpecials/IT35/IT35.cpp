@@ -158,7 +158,7 @@ const HRESULT CIT35Specials::SetLNBPower(bool bActive)
 	return E_NOINTERFACE;
 }
 
-const HRESULT CIT35Specials::ReadIniFile(WCHAR *szIniFilePath)
+const HRESULT CIT35Specials::ReadIniFile(const WCHAR *szIniFilePath)
 {
 	// IFé¸îgêîÇ≈ put_CarrierFrequency() ÇçsÇ§
 	m_bRewriteIFFreq = (BOOL)::GetPrivateProfileIntW(L"IT35", L"RewriteIFFreq", 0, szIniFilePath);
