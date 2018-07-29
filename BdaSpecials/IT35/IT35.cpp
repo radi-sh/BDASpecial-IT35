@@ -14,8 +14,6 @@
 
 #pragma comment(lib, "Strmiids.lib" )
 
-using namespace std;
-
 FILE *g_fpLog = NULL;
 
 HMODULE hMySelf;

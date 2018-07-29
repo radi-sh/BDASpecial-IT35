@@ -22,8 +22,6 @@
 
 #pragma comment(lib, "Strmiids.lib")
 
-using namespace std;
-
 CCOMProc::CCOMProc(void)
 	: hThread(NULL),
 	hThreadInitComp(NULL),
@@ -69,13 +67,13 @@ CCOMProc::~CCOMProc(void)
 	return;
 };
 
-void CCOMProc::SetTunerFriendlyName(wstring name) {
+void CCOMProc::SetTunerFriendlyName(std::wstring name) {
 	TunerFriendlyName = name;
 
 	return;
 };
 
-wstring CCOMProc::GetTunerDisplayName(void) {
+std::wstring CCOMProc::GetTunerDisplayName(void) {
 	return TunerDisplayName;
 }
 
@@ -383,8 +381,8 @@ DWORD WINAPI CCOMProc::COMProcThread(LPVOID lpParameter)
 	OutputDebug(L"COMProcThread: CoInitializeEx() returned 0x%x.\n", hr);
 
 	try {
-		wstring name;
-		wstring guid;
+		std::wstring name;
+		std::wstring guid;
 
 		CDSFilterEnum dsfEnum(KSCATEGORY_BDA_NETWORK_TUNER, CDEF_DEVMON_PNP_DEVICE);
 

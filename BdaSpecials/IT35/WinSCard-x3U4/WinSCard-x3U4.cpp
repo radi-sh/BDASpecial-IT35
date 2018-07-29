@@ -7,8 +7,6 @@
 #include "WinSCard-x3U4.h"
 #include "CCOMProc-x3U4.h"
 
-using namespace std;
-
 FILE *g_fpLog = NULL;
 
 static const SCARDHANDLE DUMMY_SCARDHANDLE = 0x5ca2d4a1;
@@ -79,11 +77,11 @@ static BOOL InitDevice(void) {
 
 	do {
 		// プロセス間排他用のセマフォ作成
-		wstring str, semname1, semname2, mapname1, mapname2;
-		wstring guid = COMProc.GetTunerDisplayName();
-		wstring::size_type n, last;
+		std::wstring str, semname1, semname2, mapname1, mapname2;
+		std::wstring guid = COMProc.GetTunerDisplayName();
+		std::wstring::size_type n, last;
 		n = last = 0;
-		while ((n = guid.find(L'#', n)) != wstring::npos) {
+		while ((n = guid.find(L'#', n)) != std::wstring::npos) {
 			last = n;
 			n++;
 		}
@@ -92,7 +90,7 @@ static BOOL InitDevice(void) {
 		else
 			str = guid;
 		n = 0;
-		while ((n = str.find(L'\\', n)) != wstring::npos) {
+		while ((n = str.find(L'\\', n)) != std::wstring::npos) {
 			str.replace(n, 1, 1, L'/');
 		}
 		semname1 = L"Global\\WinSCard-x3U4_Lock" + str;
