@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Windows.h>
+
 class CComProtocolT1 {
 public:
 	enum BLOCK_TYPES {

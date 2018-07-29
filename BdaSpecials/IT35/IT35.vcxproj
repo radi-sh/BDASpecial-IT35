@@ -234,9 +234,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\common\CIniFileAccess.cpp" />
+    <ClCompile Include="..\..\common\common.cpp" />
     <ClCompile Include="IT35.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\common\CIniFileAccess.h" />
     <ClInclude Include="..\..\common\common.h" />
     <ClInclude Include="..\..\common\IBdaSpecials.h" />
     <ClInclude Include="..\..\common\IBdaSpecials2.h" />

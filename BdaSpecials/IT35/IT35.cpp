@@ -1,16 +1,15 @@
-#include <Windows.h>
-#include <stdio.h>
-
-#include <string>
+#include "common.h"
 
 #include "IT35.h"
 
-#include <iostream>
+#include <Windows.h>
+#include <string>
+
 #include <dshow.h>
 
-#include "common.h"
-
+#include "CIniFileAccess.h"
 #include "IT35propset.h"
+#include "CIniFileAccess.h"
 
 #pragma comment(lib, "Strmiids.lib" )
 
@@ -41,13 +40,13 @@ __declspec(dllexport) IBdaSpecials * CreateBdaSpecials(CComPtr<IBaseFilter> pTun
 
 __declspec(dllexport) HRESULT CheckAndInitTuner(IBaseFilter *pTunerDevice, const WCHAR *szDisplayName, const WCHAR *szFriendlyName, const WCHAR *szIniFilePath)
 {
+	CIniFileAccess IniFileAccess(szIniFilePath);
+
 	// DebugLogを記録するかどうか
-	if (::GetPrivateProfileIntW(L"IT35", L"DebugLog", 0, szIniFilePath)) {
+	if (IniFileAccess.ReadKeyI(L"IT35", L"DebugLog", 0)) {
 		// INIファイルのファイル名取得
-		WCHAR szDebugLogPath[_MAX_PATH + 1];
-		::GetModuleFileNameW(hMySelf, szDebugLogPath, _MAX_PATH + 1);
-		::wcscpy_s(szDebugLogPath + ::wcslen(szDebugLogPath) - 3, 4, L"log");
-		SetDebugLog(szDebugLogPath);
+		// DebugLogのファイル名取得
+		SetDebugLog(common::GetModuleName(hMySelf) + L"log");
 	}
 
 	return S_OK;
@@ -160,14 +159,17 @@ const HRESULT CIT35Specials::SetLNBPower(bool bActive)
 
 const HRESULT CIT35Specials::ReadIniFile(const WCHAR *szIniFilePath)
 {
+	CIniFileAccess IniFileAccess(szIniFilePath);
+	IniFileAccess.SetSectionName(L"IT35");
+
 	// IF周波数で put_CarrierFrequency() を行う
-	m_bRewriteIFFreq = (BOOL)::GetPrivateProfileIntW(L"IT35", L"RewriteIFFreq", 0, szIniFilePath);
+	m_bRewriteIFFreq = (BOOL)IniFileAccess.ReadKeyI(L"RewriteIFFreq", 0);
 
 	// 固有の Property set を使用して TSID の書込みが必要
-	m_bPrivateSetTSID = (BOOL)::GetPrivateProfileIntW(L"IT35", L"PrivateSetTSID", 0, szIniFilePath);
+	m_bPrivateSetTSID = (BOOL)IniFileAccess.ReadKeyI(L"PrivateSetTSID", 0);
 
 	// LNB電源の供給をONする
-	m_bLNBPowerON = (BOOL)::GetPrivateProfileIntW(L"IT35", L"LNBPowerON", 0, szIniFilePath);
+	m_bLNBPowerON = (BOOL)IniFileAccess.ReadKeyI(L"LNBPowerON", 0);
 
 	return S_OK;
 }

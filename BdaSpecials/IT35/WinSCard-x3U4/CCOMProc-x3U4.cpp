@@ -1,6 +1,9 @@
+#include "common.h"
+
+#include "CCOMProc-x3U4.h"
+
 #include <Windows.h>
 
-#include <iostream>
 #include <DShow.h>
 
 // KSCATEGORY_...
@@ -12,12 +15,8 @@
 #include <bdatypes.h>
 #include <bdamedia.h>
 
-#include "common.h"
 #include "IT35propset.h"
 #include "DSFilterEnum.h"
-
-#include "CCOMProc-x3U4.h"
-
 #include "WaitWithMsg.h"
 
 #pragma comment(lib, "Strmiids.lib")

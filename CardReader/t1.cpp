@@ -1,9 +1,8 @@
-#include <Windows.h>
-#include <iostream>
+#include "common.h"
 
 #include "t1.h"
 
-#include "common.h"
+#include <Windows.h>
 
 CComProtocolT1::CComProtocolT1(void)
 	: CardIFSC(32),
