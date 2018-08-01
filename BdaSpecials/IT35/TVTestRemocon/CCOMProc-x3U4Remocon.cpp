@@ -39,17 +39,10 @@ CCOMProc::~CCOMProc(void)
 	if (hThread) {
 		::SetEvent(hTerminateRequest);
 		::WaitForSingleObject(hThread, 1000);
-		::CloseHandle(hThread);
-		hThread = NULL;
+		SAFE_CLOSE_HANDLE(hThread);
 	}
-	if (hThreadInitComp) {
-		::CloseHandle(hThreadInitComp);
-		hThreadInitComp = NULL;
-	}
-	if (hTerminateRequest) {
-		::CloseHandle(hTerminateRequest);
-		hTerminateRequest = NULL;
-	}
+	SAFE_CLOSE_HANDLE(hThreadInitComp);
+	SAFE_CLOSE_HANDLE(hTerminateRequest);
 	::DeleteCriticalSection(&csLock);
 
 	return;
@@ -88,7 +81,7 @@ BOOL CCOMProc::CreateThread(void)
 	case WAIT_OBJECT_0:
 	default:
 		try {
-			::CloseHandle(hThreadTemp);
+			SAFE_CLOSE_HANDLE(hThreadTemp);
 		}
 		catch (...) {
 		}
@@ -114,7 +107,7 @@ void CCOMProc::CloseThreadHandle(void)
 {
 	if (hThread) {
 		try {
-			::CloseHandle(hThread);
+			SAFE_CLOSE_HANDLE(hThread);
 		}
 		catch (...) {
 		}

@@ -40,16 +40,14 @@ static void CloseAllHandle(void) {
 	}
 	if (l_hMapFile) {
 		try {
-			::CloseHandle(l_hMapFile);
-			l_hMapFile = NULL;
+			SAFE_CLOSE_HANDLE(l_hMapFile);
 		}
 		catch (...) {
 		}
 	}
 	if (l_hSemaphore) {
 		try {
-			::CloseHandle(l_hSemaphore);
-			l_hSemaphore = NULL;
+			SAFE_CLOSE_HANDLE(l_hSemaphore);
 		}
 		catch (...) {
 		}
@@ -328,8 +326,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 		CloseAllHandle();
 		if (l_hStartedEvent) {
 			try {
-				::CloseHandle(l_hStartedEvent);
-				l_hStartedEvent = NULL;
+				SAFE_CLOSE_HANDLE(l_hStartedEvent);
 			}
 			catch (...) {
 			}
