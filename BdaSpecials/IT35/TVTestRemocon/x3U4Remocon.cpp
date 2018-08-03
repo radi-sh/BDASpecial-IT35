@@ -159,10 +159,12 @@ bool CRemocon::InitializePlugin()
 		IniFileAccess.SetSectionName(L"Generic");
 
 		// tunerのFriendlyName取得
-		std::wstring name;
+		std::wstring name, dip;
 		name = IniFileAccess.ReadKeyS(L"TunerFriendlyName", L"PXW3U4 Multi Tuner ISDB-T BDA Filter #0");
 		name = IniFileAccess.ReadKeyS(L"FriendlyName", name);
-		COMProc.SetTunerFriendlyName(name);
+		// tunerのデバイスインスタンスパス取得
+		dip = IniFileAccess.ReadKeyS(L"TunerInstancePath", L"");
+		COMProc.SetTunerFriendlyName(name, dip);
 
 		// Debug Logを記録するかどうか
 		if (IniFileAccess.ReadKeyI(L"DebugLog", 0)) {

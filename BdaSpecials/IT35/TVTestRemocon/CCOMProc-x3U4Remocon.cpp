@@ -48,9 +48,9 @@ CCOMProc::~CCOMProc(void)
 	return;
 };
 
-void CCOMProc::SetTunerFriendlyName(std::wstring name)
-{
-	TunerFriendlyName = name;
+void CCOMProc::SetTunerFriendlyName(std::wstring friendlyName, std::wstring instancePath) {
+	TunerFriendlyName = friendlyName;
+	TunerInstancePath = common::WStringToUpperCase(instancePath);
 
 	return;
 };
@@ -152,6 +152,15 @@ DWORD WINAPI CCOMProc::COMProcThread(LPVOID lpParameter)
 			dsfEnum.getDisplayName(&guid);
 			if (size_t pos = name.find(pCOMProc->TunerFriendlyName) != 0)
 				continue;
+			if (pCOMProc->TunerInstancePath != L"") {
+				// デバイスインスタンスパスが一致するか確認
+				std::wstring dip = CDSFilterEnum::getDeviceInstancePathrFromDisplayName(guid);
+				OutputDebug(L"COMProcThread: DeviceInstancePath = %s\n");
+				if (dip != pCOMProc->TunerInstancePath) {
+					OutputDebug(L"COMProcThread: DeviceInstancePath did not match.\n");
+					continue;
+				}
+			}
 
 			// チューナーデバイス取得
 			if (FAILED(hr = dsfEnum.getFilter(&pTunerDevice))) {

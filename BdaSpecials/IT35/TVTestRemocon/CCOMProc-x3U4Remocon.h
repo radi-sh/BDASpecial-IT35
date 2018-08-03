@@ -11,7 +11,8 @@ private:
 	HANDLE hThreadInitComp;			// スレッド初期化完了通知
 	HANDLE hTerminateRequest;		// スレッド終了要求
 	CRITICAL_SECTION csLock;		// 排他用
-	std::wstring TunerFriendlyName;
+	std::wstring TunerFriendlyName; // チューナー識別用FriendlyName
+	std::wstring TunerInstancePath; // チューナー識別用デバイスインスタンスパス
 	DWORD PollingInterval;
 	RemoconCallbackFunc CallbackFunc;
 	LPARAM CallbackInstance;
@@ -19,7 +20,7 @@ private:
 public:
 	CCOMProc(void);
 	~CCOMProc(void);
-	void SetTunerFriendlyName(std::wstring name);
+	void SetTunerFriendlyName(std::wstring friendlyName, std::wstring instancePath);
 	void SetPollingInterval(DWORD dwMilliseconds);
 	BOOL CreateThread(void);
 	void TerminateThread(void);
