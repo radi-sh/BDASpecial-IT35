@@ -3,6 +3,7 @@
 #include "WinSCard-x3U4.h"
 
 #include <Windows.h>
+#include <algorithm>
 
 #include "t1.h"
 #include "atr.h"
@@ -77,26 +78,14 @@ static BOOL InitDevice(void) {
 
 	do {
 		// プロセス間排他用のセマフォ作成
-		std::wstring str, semname1, semname2, mapname1, mapname2;
 		std::wstring guid = COMProc.GetTunerDisplayName();
-		std::wstring::size_type n, last;
-		n = last = 0;
-		while ((n = guid.find(L'#', n)) != std::wstring::npos) {
-			last = n;
-			n++;
-		}
-		if (last != 0)
-			str = guid.substr(0, last);
-		else
-			str = guid;
-		n = 0;
-		while ((n = str.find(L'\\', n)) != std::wstring::npos) {
-			str.replace(n, 1, 1, L'/');
-		}
-		semname1 = L"Global\\WinSCard-x3U4_Lock" + str;
-		semname2 = L"Local\\WinSCard-x3U4_Lock" + str;
-		mapname1 = L"Global\\WinSCard-x3U4_MapFile" + str;
-		mapname2 = L"Local\\WinSCard-x3U4_MapFile" + str;
+		std::wstring::size_type len = guid.find_last_of(L"#");
+		std::wstring str = guid.substr(0, len);
+		std::replace(str.begin(), str.end(), L'\\', L'/');
+		std::wstring semname1 = L"Global\\WinSCard-x3U4_Lock" + str;
+		std::wstring semname2 = L"Local\\WinSCard-x3U4_Lock" + str;
+		std::wstring mapname1 = L"Global\\WinSCard-x3U4_MapFile" + str;
+		std::wstring mapname2 = L"Local\\WinSCard-x3U4_MapFile" + str;
 		l_hSemaphore = ::CreateSemaphoreW(NULL, 1, 1, semname1.c_str());
 		if (!l_hSemaphore) {
 			OutputDebug(L"InitDevice: Error creating Semaphore Object for Global Namespace. Trying OpenSemaphore().\n");
