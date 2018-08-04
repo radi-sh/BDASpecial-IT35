@@ -382,7 +382,7 @@ DWORD WINAPI CCOMProc::COMProcThread(LPVOID lpParameter)
 			if (pCOMProc->TunerInstancePath != L"") {
 				// デバイスインスタンスパスが一致するか確認
 				std::wstring dip = CDSFilterEnum::getDeviceInstancePathrFromDisplayName(guid);
-				OutputDebug(L"COMProcThread: DeviceInstancePath = %s\n");
+				OutputDebug(L"COMProcThread: DeviceInstancePath = %s\n", dip.c_str());
 				if (dip != pCOMProc->TunerInstancePath) {
 					OutputDebug(L"COMProcThread: DeviceInstancePath did not match.\n");
 					continue;
