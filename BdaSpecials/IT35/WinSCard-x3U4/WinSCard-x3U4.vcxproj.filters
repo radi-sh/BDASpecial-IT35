@@ -70,7 +70,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\doc\WinSCard-x3U4.ini">
+    <None Include="..\..\..\doc\WinSCard-x3U4\WinSCard.ini">
       <Filter>doc</Filter>
     </None>
   </ItemGroup>
