@@ -43,7 +43,7 @@ __declspec(dllexport) HRESULT CheckAndInitTuner(IBaseFilter *pTunerDevice, const
 	CIniFileAccess IniFileAccess(szIniFilePath);
 
 	// DebugLogを記録するかどうか
-	if (IniFileAccess.ReadKeyI(L"IT35", L"DebugLog", 0)) {
+	if (IniFileAccess.ReadKeyB(L"IT35", L"DebugLog", 0)) {
 		// INIファイルのファイル名取得
 		// DebugLogのファイル名取得
 		SetDebugLog(common::GetModuleName(hMySelf) + L"log");
@@ -163,13 +163,13 @@ const HRESULT CIT35Specials::ReadIniFile(const WCHAR *szIniFilePath)
 	IniFileAccess.SetSectionName(L"IT35");
 
 	// IF周波数で put_CarrierFrequency() を行う
-	m_bRewriteIFFreq = (BOOL)IniFileAccess.ReadKeyI(L"RewriteIFFreq", 0);
+	m_bRewriteIFFreq = IniFileAccess.ReadKeyB(L"RewriteIFFreq", 0);
 
 	// 固有の Property set を使用して TSID の書込みが必要
-	m_bPrivateSetTSID = (BOOL)IniFileAccess.ReadKeyI(L"PrivateSetTSID", 0);
+	m_bPrivateSetTSID = IniFileAccess.ReadKeyB(L"PrivateSetTSID", 0);
 
 	// LNB電源の供給をONする
-	m_bLNBPowerON = (BOOL)IniFileAccess.ReadKeyI(L"LNBPowerON", 0);
+	m_bLNBPowerON = IniFileAccess.ReadKeyB(L"LNBPowerON", 0);
 
 	return S_OK;
 }
