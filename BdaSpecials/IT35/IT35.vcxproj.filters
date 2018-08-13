@@ -58,6 +58,9 @@
     <None Include="..\..\doc\BonDriver_PX_x3U4_T.ini">
       <Filter>doc</Filter>
     </None>
+    <None Include="..\..\doc\BonDriver_1T1S.ini">
+      <Filter>doc</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\..\doc\History-IT35.txt">

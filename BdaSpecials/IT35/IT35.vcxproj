@@ -248,6 +248,7 @@
     <ClInclude Include="IT35propset.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\doc\BonDriver_1T1S.ini" />
     <None Include="..\..\doc\BonDriver_PX_x3U4_S.ini" />
     <None Include="..\..\doc\BonDriver_PX_x3U4_T.ini" />
   </ItemGroup>
