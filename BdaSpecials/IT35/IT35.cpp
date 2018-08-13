@@ -66,9 +66,11 @@ CIT35Specials::CIT35Specials(HMODULE hMySelf, CComPtr<IBaseFilter> pTunerDevice)
 	: m_hMySelf(hMySelf),
 	  m_pTunerDevice(pTunerDevice),
 	  m_pIKsPropertySet(NULL),
+	  m_CurrentModulationType(BDA_MOD_NOT_SET),
 	  m_bRewriteIFFreq(FALSE),
 	  m_bPrivateSetTSID(FALSE),
-	  m_bLNBPowerON(FALSE)
+	  m_bLNBPowerON(FALSE),
+	  m_bDualModeISDB(FALSE)
 {
 	::InitializeCriticalSection(&m_CriticalSection);
 
@@ -171,6 +173,9 @@ const HRESULT CIT35Specials::ReadIniFile(const WCHAR *szIniFilePath)
 	// LNB“dŒ¹‚Ì‹Ÿ‹‹‚ðON‚·‚é
 	m_bLNBPowerON = IniFileAccess.ReadKeyB(L"LNBPowerON", 0);
 
+	// Dual Mode ISDB Tuner
+	m_bDualModeISDB = IniFileAccess.ReadKeyB(L"DualModeISDB", 0);
+
 	return S_OK;
 }
 
@@ -198,6 +203,19 @@ const HRESULT CIT35Specials::PreTuneRequest(const TuningParam *pTuningParm, ITun
 		return E_FAIL;
 
 	HRESULT hr;
+
+	// Dual Mode ISDB Tuner‚Ìê‡‚ÍTC90532‚Ì•œ’²Mode‚ðÝ’è
+	if (m_bDualModeISDB == TRUE && pTuningParm->Modulation->Modulation != m_CurrentModulationType) {
+		switch (pTuningParm->Modulation->Modulation) {
+		case BDA_MOD_ISDB_T_TMCC:
+			hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, PRIVATE_IO_CTL_FUNC_DEMOD_OFDM);
+			break;
+		case BDA_MOD_ISDB_S_TMCC:
+			hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, PRIVATE_IO_CTL_FUNC_DEMOD_PSK);
+			break;
+		}
+		m_CurrentModulationType = pTuningParm->Modulation->Modulation;
+	}
 
 	// IFŽü”g”‚É•ÏŠ·
 	if (m_bRewriteIFFreq && pTuningParm->Antenna->HighOscillator != -1 || pTuningParm->Antenna->LowOscillator != -1) {
