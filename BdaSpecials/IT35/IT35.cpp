@@ -205,7 +205,7 @@ const HRESULT CIT35Specials::PreTuneRequest(const TuningParam *pTuningParm, ITun
 	HRESULT hr;
 
 	// Dual Mode ISDB Tuner‚Ìê‡‚ÍTC90532‚Ì•œ’²Mode‚ðÝ’è
-	if (m_bDualModeISDB == TRUE && pTuningParm->Modulation->Modulation != m_CurrentModulationType) {
+	if (m_bDualModeISDB && pTuningParm->Modulation->Modulation != m_CurrentModulationType) {
 		switch (pTuningParm->Modulation->Modulation) {
 		case BDA_MOD_ISDB_T_TMCC:
 			hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, PRIVATE_IO_CTL_FUNC_DEMOD_OFDM);
@@ -217,41 +217,43 @@ const HRESULT CIT35Specials::PreTuneRequest(const TuningParam *pTuningParm, ITun
 		m_CurrentModulationType = pTuningParm->Modulation->Modulation;
 	}
 
-	// IFŽü”g”‚É•ÏŠ·
-	if (m_bRewriteIFFreq && pTuningParm->Antenna->HighOscillator != -1 || pTuningParm->Antenna->LowOscillator != -1) {
-		long freq = pTuningParm->Frequency;
-		if (pTuningParm->Antenna->LNBSwitch != -1) {
-			if (freq < pTuningParm->Antenna->LNBSwitch)
-				freq = freq - pTuningParm->Antenna->LowOscillator;
-			else
-				freq = freq - pTuningParm->Antenna->HighOscillator;
-		}
-		else {
-			if (pTuningParm->Antenna->Tone == 0)
-				freq = freq - pTuningParm->Antenna->LowOscillator;
-			else
-				freq = freq - pTuningParm->Antenna->HighOscillator;
+	// Dual Mode ISDB Tuner‚Ìê‡‚ÍISDB-S‚ÌŽž‚Ì‚Ý
+	if (!m_bDualModeISDB || pTuningParm->Modulation->Modulation == BDA_MOD_ISDB_S_TMCC) {
+		// IFŽü”g”‚É•ÏŠ·
+		if (m_bRewriteIFFreq && pTuningParm->Antenna->HighOscillator != -1 || pTuningParm->Antenna->LowOscillator != -1) {
+			long freq = pTuningParm->Frequency;
+			if (pTuningParm->Antenna->LNBSwitch != -1) {
+				if (freq < pTuningParm->Antenna->LNBSwitch)
+					freq = freq - pTuningParm->Antenna->LowOscillator;
+				else
+					freq = freq - pTuningParm->Antenna->HighOscillator;
+			}
+			else {
+				if (pTuningParm->Antenna->Tone == 0)
+					freq = freq - pTuningParm->Antenna->LowOscillator;
+				else
+					freq = freq - pTuningParm->Antenna->HighOscillator;
+			}
+
+			CComPtr<ILocator> pILocator;
+			hr = pITuneRequest->get_Locator(&pILocator);
+			if (FAILED(hr) || !pILocator) {
+				OutputDebug(L"ITuneRequest->get_Locator failed.\n");
+				return E_FAIL;
+			}
+
+			pILocator->put_CarrierFrequency(freq);
+
+			hr = pITuneRequest->put_Locator(pILocator);
 		}
 
-		CComPtr<ILocator> pILocator;
-		hr = pITuneRequest->get_Locator(&pILocator);
-		if (FAILED(hr) || !pILocator) {
-			OutputDebug(L"ITuneRequest->get_Locator failed.\n");
-			return E_FAIL;
+		// TSID‚ðSet‚·‚é
+		if (m_bPrivateSetTSID && pTuningParm->TSID != 0 && pTuningParm->TSID != -1) {
+			::EnterCriticalSection(&m_CriticalSection);
+			hr = it35_PutISDBIoCtl(m_pIKsPropertySet, (WORD)pTuningParm->TSID);
+			::LeaveCriticalSection(&m_CriticalSection);
 		}
-
-		pILocator->put_CarrierFrequency(freq);
-
-		hr = pITuneRequest->put_Locator(pILocator);
 	}
-
-	// TSID‚ðSet‚·‚é
-	if (m_bPrivateSetTSID && pTuningParm->TSID != 0 && pTuningParm->TSID != -1) {
-		::EnterCriticalSection(&m_CriticalSection);
-		hr = it35_PutISDBIoCtl(m_pIKsPropertySet, (WORD)pTuningParm->TSID);
-		::LeaveCriticalSection(&m_CriticalSection);
-	}
-
 	return S_OK;
 }
 
