@@ -1,20 +1,17 @@
-#include <Windows.h>
-#include <stdio.h>
-
-#include <string>
+#include "common.h"
 
 #include "IT35.h"
 
-#include <iostream>
+#include <Windows.h>
+#include <string>
+
 #include <dshow.h>
 
-#include "common.h"
-
+#include "CIniFileAccess.h"
 #include "IT35propset.h"
+#include "CIniFileAccess.h"
 
 #pragma comment(lib, "Strmiids.lib" )
-
-using namespace std;
 
 FILE *g_fpLog = NULL;
 
@@ -43,13 +40,13 @@ __declspec(dllexport) IBdaSpecials * CreateBdaSpecials(CComPtr<IBaseFilter> pTun
 
 __declspec(dllexport) HRESULT CheckAndInitTuner(IBaseFilter *pTunerDevice, const WCHAR *szDisplayName, const WCHAR *szFriendlyName, const WCHAR *szIniFilePath)
 {
+	CIniFileAccess IniFileAccess(szIniFilePath);
+
 	// DebugLogを記録するかどうか
-	if (::GetPrivateProfileIntW(L"IT35", L"DebugLog", 0, szIniFilePath)) {
+	if (IniFileAccess.ReadKeyB(L"IT35", L"DebugLog", 0)) {
 		// INIファイルのファイル名取得
-		WCHAR szDebugLogPath[_MAX_PATH + 1];
-		::GetModuleFileNameW(hMySelf, szDebugLogPath, _MAX_PATH + 1);
-		::wcscpy_s(szDebugLogPath + ::wcslen(szDebugLogPath) - 3, 4, L"log");
-		SetDebugLog(szDebugLogPath);
+		// DebugLogのファイル名取得
+		SetDebugLog(common::GetModuleName(hMySelf) + L"log");
 	}
 
 	return S_OK;
@@ -69,9 +66,11 @@ CIT35Specials::CIT35Specials(HMODULE hMySelf, CComPtr<IBaseFilter> pTunerDevice)
 	: m_hMySelf(hMySelf),
 	  m_pTunerDevice(pTunerDevice),
 	  m_pIKsPropertySet(NULL),
+	  m_CurrentModulationType(BDA_MOD_NOT_SET),
 	  m_bRewriteIFFreq(FALSE),
 	  m_bPrivateSetTSID(FALSE),
-	  m_bLNBPowerON(FALSE)
+	  m_bLNBPowerON(FALSE),
+	  m_bDualModeISDB(FALSE)
 {
 	::InitializeCriticalSection(&m_CriticalSection);
 
@@ -160,16 +159,22 @@ const HRESULT CIT35Specials::SetLNBPower(bool bActive)
 	return E_NOINTERFACE;
 }
 
-const HRESULT CIT35Specials::ReadIniFile(WCHAR *szIniFilePath)
+const HRESULT CIT35Specials::ReadIniFile(const WCHAR *szIniFilePath)
 {
+	CIniFileAccess IniFileAccess(szIniFilePath);
+	IniFileAccess.SetSectionName(L"IT35");
+
 	// IF周波数で put_CarrierFrequency() を行う
-	m_bRewriteIFFreq = (BOOL)::GetPrivateProfileIntW(L"IT35", L"RewriteIFFreq", 0, szIniFilePath);
+	m_bRewriteIFFreq = IniFileAccess.ReadKeyB(L"RewriteIFFreq", 0);
 
 	// 固有の Property set を使用して TSID の書込みが必要
-	m_bPrivateSetTSID = (BOOL)::GetPrivateProfileIntW(L"IT35", L"PrivateSetTSID", 0, szIniFilePath);
+	m_bPrivateSetTSID = IniFileAccess.ReadKeyB(L"PrivateSetTSID", 0);
 
 	// LNB電源の供給をONする
-	m_bLNBPowerON = (BOOL)::GetPrivateProfileIntW(L"IT35", L"LNBPowerON", 0, szIniFilePath);
+	m_bLNBPowerON = IniFileAccess.ReadKeyB(L"LNBPowerON", 0);
+
+	// Dual Mode ISDB Tuner
+	m_bDualModeISDB = IniFileAccess.ReadKeyB(L"DualModeISDB", 0);
 
 	return S_OK;
 }
@@ -199,41 +204,56 @@ const HRESULT CIT35Specials::PreTuneRequest(const TuningParam *pTuningParm, ITun
 
 	HRESULT hr;
 
-	// IF周波数に変換
-	if (m_bRewriteIFFreq && pTuningParm->Antenna->HighOscillator != -1 || pTuningParm->Antenna->LowOscillator != -1) {
-		long freq = pTuningParm->Frequency;
-		if (pTuningParm->Antenna->LNBSwitch != -1) {
-			if (freq < pTuningParm->Antenna->LNBSwitch)
-				freq = freq - pTuningParm->Antenna->LowOscillator;
-			else
-				freq = freq - pTuningParm->Antenna->HighOscillator;
+	// Dual Mode ISDB Tunerの場合はTC90532の復調Modeを設定
+	if (m_bDualModeISDB && pTuningParm->Modulation->Modulation != m_CurrentModulationType) {
+		switch (pTuningParm->Modulation->Modulation) {
+		case BDA_MOD_ISDB_T_TMCC:
+			hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, PRIVATE_IO_CTL_FUNC_DEMOD_OFDM);
+			break;
+		case BDA_MOD_ISDB_S_TMCC:
+			hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, PRIVATE_IO_CTL_FUNC_DEMOD_PSK);
+			break;
 		}
-		else {
-			if (pTuningParm->Antenna->Tone == 0)
-				freq = freq - pTuningParm->Antenna->LowOscillator;
-			else
-				freq = freq - pTuningParm->Antenna->HighOscillator;
-		}
-
-		CComPtr<ILocator> pILocator;
-		hr = pITuneRequest->get_Locator(&pILocator);
-		if (FAILED(hr) || !pILocator) {
-			OutputDebug(L"ITuneRequest->get_Locator failed.\n");
-			return E_FAIL;
-		}
-
-		pILocator->put_CarrierFrequency(freq);
-
-		hr = pITuneRequest->put_Locator(pILocator);
+		m_CurrentModulationType = pTuningParm->Modulation->Modulation;
 	}
 
-	// TSIDをSetする
-	if (m_bPrivateSetTSID && pTuningParm->TSID != 0 && pTuningParm->TSID != -1) {
-		::EnterCriticalSection(&m_CriticalSection);
-		hr = it35_PutISDBIoCtl(m_pIKsPropertySet, (WORD)pTuningParm->TSID);
-		::LeaveCriticalSection(&m_CriticalSection);
-	}
+	// Dual Mode ISDB Tunerの場合はISDB-Sの時のみ
+	if (!m_bDualModeISDB || pTuningParm->Modulation->Modulation == BDA_MOD_ISDB_S_TMCC) {
+		// IF周波数に変換
+		if (m_bRewriteIFFreq && pTuningParm->Antenna->HighOscillator != -1 || pTuningParm->Antenna->LowOscillator != -1) {
+			long freq = pTuningParm->Frequency;
+			if (pTuningParm->Antenna->LNBSwitch != -1) {
+				if (freq < pTuningParm->Antenna->LNBSwitch)
+					freq = freq - pTuningParm->Antenna->LowOscillator;
+				else
+					freq = freq - pTuningParm->Antenna->HighOscillator;
+			}
+			else {
+				if (pTuningParm->Antenna->Tone == 0)
+					freq = freq - pTuningParm->Antenna->LowOscillator;
+				else
+					freq = freq - pTuningParm->Antenna->HighOscillator;
+			}
 
+			CComPtr<ILocator> pILocator;
+			hr = pITuneRequest->get_Locator(&pILocator);
+			if (FAILED(hr) || !pILocator) {
+				OutputDebug(L"ITuneRequest->get_Locator failed.\n");
+				return E_FAIL;
+			}
+
+			pILocator->put_CarrierFrequency(freq);
+
+			hr = pITuneRequest->put_Locator(pILocator);
+		}
+
+		// TSIDをSetする
+		if (m_bPrivateSetTSID && pTuningParm->TSID != 0 && pTuningParm->TSID != -1) {
+			::EnterCriticalSection(&m_CriticalSection);
+			hr = it35_PutISDBIoCtl(m_pIKsPropertySet, (WORD)pTuningParm->TSID);
+			::LeaveCriticalSection(&m_CriticalSection);
+		}
+	}
 	return S_OK;
 }
 

@@ -1,27 +1,30 @@
-IT9135系チューナー用BDASpecialプラグイン（PX-W3U4/PX-Q3U4/PX-W3PE4/PX-Q3PE4専用）
-  PX-W3U4/PX-Q3U4/PX-W3PE4/PX-Q3PE4内蔵カードリーダー用WinSCard.dll付属
-  PX-W3U4/PX-Q3U4付属リモコン用TVTestプラグイン付属
+Digibest系チューナー用BDASpecialプラグイン
+  PX-Q3PE4/PX-W3PE4/PX-Q3U4/PX-W3U4/DTV02-5T-P/DTV02-1T1S-U内蔵カードリーダー用WinSCard.dll付属
+  PX-Q3U4/PX-W3U4付属リモコン用TVTestプラグイン付属
 
 【これは何？】
-Plex社製USB接続(Box型/PCI-Ex型)3波チューナーPX-W3U4/PX-Q3U4/PX-W3PE4/PX-Q3PE4専用のBonDriver_BDA用BDASpecialプラグインです。
+Plex社製/e-Better社製USB接続(Box型/PCI-Ex型)3波チューナー専用のBonDriver_BDA用BDASpecialプラグインです。
 BonDriver_BDA.dllと組み合わせて使用します。
-また、付属のWinSCard.dllを使用することにより、PX-W3U4/PX-Q3U4/PX-W3PE4/PX-Q3PE4内臓カードリーダーを任意のアプリで利用することができます。
+また、付属のWinSCard.dllを使用することにより、内臓カードリーダーを任意のアプリで利用することができます。
 
 【動作環境】
 Windows XP以降 (x86/x64)
 
 【対応チューナー】
-Plex社製の下記のチューナーに対応しています（たぶん）。
-  PX-W3U4
-  PX-Q3U4
-  PX-W3PE4
-  PX-Q3PE4
-同じPlex社製のPXシリーズでもDigibest社OEM製品以外のものはこのBDASpecialプラグインの対象外です。
+下記のチューナーに対応しています（たぶん）。
+  Plex PX-Q3PE4
+  Plex PX-W3PE4
+  Plex PX-Q3U4
+  Plex PX-W3U4
+  e-Better DTV02-5T-P
+  e-Better DTV02-1T1S-U
+Plex社製/e-Better社製でもDigibest社OEM製品以外のもの、IT9300系が使用されていないものはこのBDASpecialプラグインの対象外です。
 
 【使い方】
 1. BonDriver_BDAの入手
 下記URLより、最新バージョンのBonDriver_BDAを入手してください。
 https://github.com/radi-sh/BonDriver_BDA/releases
+※ BonDriver_BDA改-20180818より前のバージョンでは動作しませんのでご注意ください。
 
 2. x86/x64と通常版/ランタイム内蔵版の選択
 BonDriver_BDA付属のReadme-BonDriver_BDAを参考に、BonDriver_BDAと同じものを選択してください。
@@ -34,8 +37,10 @@ BonDriver_BDA付属のReadme-BonDriver_BDAを参考に、インストールし�
   通常、ファイル名が"BonDriver_"から始まる必要がありますのでご注意ください。
 ・用意したdllと同じ名前のiniファイルを配置
   下記のサンプルiniファイルを基に作成してください。
-    -BonDriver_PX_x3U4_T.ini   (地デジ用)
-    -BonDriver_PX_x3U4_S.ini   (衛星用)
+    -BonDriver_PX_x3U4_T.ini   (PX-Q3PE4/W3PE4/Q3U4/W3U4 地デジ用)
+    -BonDriver_PX_x3U4_S.ini   (PX-Q3PE4/W3PE4/Q3U4/W3U4 衛星用)
+    -BonDriver_5T.ini          (DTV02-5T-P 地デジ用)
+    -BonDriver_1T1S.ini        (DTV02-1T1S-U 地デジ&衛星用)
 ・IT35.dllファイルを配置
   IT35.dllファイルはリネームせずに1つだけ配置すればOKです。
 
@@ -51,13 +56,13 @@ BonDriver_BDA付属のReadme-BonDriver_BDAを参考に、インストールし�
   IT35.dll
 
 5. WinSCard.dllとiniファイルの配置
-PX-W3U4/PX-Q3U4/PX-W3PE4/PX-Q3PE4内蔵のカードリーダを使用しない場合はこの作業は必要ありません。
+内蔵のカードリーダを使用しない場合はこの作業は必要ありません。
 ・使用するアプリのexeがあるフォルダに、WinSCard.dllとWinSCard.iniを配置
 ・必要に応じてWinSCard.iniの内容を変更
-  付属のiniファイルはPX-W3U4用ですのでPX-Q3U4/PX-W3PE4/PX-Q3PE4で使用する場合はiniファイルの変更が必要です。
+  付属のiniファイルはPX-W3U4用ですので他の機種で使用する場合はiniファイルの変更が必要です。
 
 6. TVTest用プラグインの配置
-TVTestでPX-W3U4/PX-Q3U4付属リモコンを使用する場合以外はこの作業は必要ありません。
+TVTestでPX-Q3U4/PX-W3U4付属リモコンを使用する場合以外はこの作業は必要ありません。
 ・TVTestのPluginsフォルダに、x3U4Remocon.tvtpとx3U4Remocon.iniを配置
 ・必要に応じてx3U4Remocon.iniの内容を変更
   付属のiniファイルはPX-W3U4用ですのでPX-Q3U4で使用する場合はiniファイルの変更が必要です。

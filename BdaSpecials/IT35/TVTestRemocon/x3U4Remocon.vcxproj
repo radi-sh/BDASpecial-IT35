@@ -232,11 +232,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\common\CIniFileAccess.cpp" />
+    <ClCompile Include="..\..\..\common\common.cpp" />
     <ClCompile Include="..\..\..\common\DSFilterEnum.cpp" />
     <ClCompile Include="CCOMProc-x3U4Remocon.cpp" />
     <ClCompile Include="x3U4Remocon.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\common\CIniFileAccess.h" />
     <ClInclude Include="..\..\..\common\common.h" />
     <ClInclude Include="..\..\..\common\DSFilterEnum.h" />
     <ClInclude Include="..\..\..\common\WaitWithMsg.h" />
@@ -245,6 +248,7 @@
     <ClInclude Include="TVTestPlugin.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\..\doc\x3U4Remocon\x3U4Remocon.ini" />
     <None Include="Exports.def" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -9,6 +9,7 @@
 
 #include "common.h"
 #include "CCOMProc-x3U4Remocon.h"
+#include "CIniFileAccess.h"
 
 // コントローラ名
 #define X3U4_REMOCON_NAME L"PX-x3U4 Remocon"
@@ -153,27 +154,25 @@ bool CRemocon::InitializePlugin()
 {
 	if (!m_fInitialized) {
 		// iniファイルのpath取得
-		WCHAR szIniFilePath[_MAX_PATH + 1];
-		::GetModuleFileNameW(g_hinstDLL, szIniFilePath, sizeof(szIniFilePath) / sizeof(szIniFilePath[0]));
-		::wcscpy_s(szIniFilePath + ::wcslen(szIniFilePath) - 4, 4, L"ini");
+		std::wstring tempPath = common::GetModuleName(g_hinstDLL);
+		CIniFileAccess IniFileAccess(tempPath + L"ini");
+		IniFileAccess.SetSectionName(L"Generic");
 
 		// tunerのFriendlyName取得
-		WCHAR buf[256];
-		::GetPrivateProfileStringW(L"Generic", L"TunerFriendlyName", L"PXW3U4 Multi Tuner ISDB-T BDA Filter #0", buf, sizeof(buf) / sizeof(buf[0]), szIniFilePath);
-		::GetPrivateProfileStringW(L"Generic", L"FriendlyName", buf, buf, sizeof(buf) / sizeof(buf[0]), szIniFilePath);
-		COMProc.SetTunerFriendlyName(buf);
+		std::wstring name, dip;
+		name = IniFileAccess.ReadKeyS(L"TunerFriendlyName", L"PXW3U4 Multi Tuner ISDB-T BDA Filter #0");
+		name = IniFileAccess.ReadKeyS(L"FriendlyName", name);
+		// tunerのデバイスインスタンスパス取得
+		dip = IniFileAccess.ReadKeyS(L"TunerInstancePath", L"");
+		COMProc.SetTunerFriendlyName(name, dip);
 
 		// Debug Logを記録するかどうか
-		if (::GetPrivateProfileIntW(L"Generic", L"DebugLog", 0, szIniFilePath)) {
-			// INIファイルのファイル名取得
-			WCHAR szDebugLogPath[_MAX_PATH + 1];
-			::wcscpy_s(szDebugLogPath, ::wcslen(szIniFilePath) + 1, szIniFilePath);
-			::wcscpy_s(szDebugLogPath + ::wcslen(szIniFilePath) - 3, 4, L"log");
-			SetDebugLog(szDebugLogPath);
+		if (IniFileAccess.ReadKeyB(L"DebugLog", 0)) {
+			SetDebugLog(tempPath + L"log");
 		}
 
 		// リモコンスキャン間隔
-		DWORD interval = ::GetPrivateProfileIntW(L"Generic", L"PollingInterval", 100, szIniFilePath);
+		DWORD interval = IniFileAccess.ReadKeyI(L"PollingInterval", 100);
 		COMProc.SetPollingInterval(interval);
 
 		if (COMProc.CreateThread() != TRUE)

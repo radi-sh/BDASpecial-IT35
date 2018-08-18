@@ -1,13 +1,14 @@
-#include <Windows.h>
-
 #include "common.h"
-#include "atr.h"
-#include "t1.h"
 
 #include "WinSCard-x3U4.h"
-#include "CCOMProc-x3U4.h"
 
-using namespace std;
+#include <Windows.h>
+#include <algorithm>
+
+#include "t1.h"
+#include "atr.h"
+#include "CCOMProc-x3U4.h"
+#include "CIniFileAccess.h"
 
 FILE *g_fpLog = NULL;
 
@@ -40,16 +41,14 @@ static void CloseAllHandle(void) {
 	}
 	if (l_hMapFile) {
 		try {
-			::CloseHandle(l_hMapFile);
-			l_hMapFile = NULL;
+			SAFE_CLOSE_HANDLE(l_hMapFile);
 		}
 		catch (...) {
 		}
 	}
 	if (l_hSemaphore) {
 		try {
-			::CloseHandle(l_hSemaphore);
-			l_hSemaphore = NULL;
+			SAFE_CLOSE_HANDLE(l_hSemaphore);
 		}
 		catch (...) {
 		}
@@ -79,26 +78,14 @@ static BOOL InitDevice(void) {
 
 	do {
 		// プロセス間排他用のセマフォ作成
-		wstring str, semname1, semname2, mapname1, mapname2;
-		wstring guid = COMProc.GetTunerDisplayName();
-		wstring::size_type n, last;
-		n = last = 0;
-		while ((n = guid.find(L'#', n)) != wstring::npos) {
-			last = n;
-			n++;
-		}
-		if (last != 0)
-			str = guid.substr(0, last);
-		else
-			str = guid;
-		n = 0;
-		while ((n = str.find(L'\\', n)) != wstring::npos) {
-			str.replace(n, 1, 1, L'/');
-		}
-		semname1 = L"Global\\WinSCard-x3U4_Lock" + str;
-		semname2 = L"Local\\WinSCard-x3U4_Lock" + str;
-		mapname1 = L"Global\\WinSCard-x3U4_MapFile" + str;
-		mapname2 = L"Local\\WinSCard-x3U4_MapFile" + str;
+		std::wstring guid = COMProc.GetTunerDisplayName();
+		std::wstring::size_type len = guid.find_last_of(L"#");
+		std::wstring str = guid.substr(0, len);
+		std::replace(str.begin(), str.end(), L'\\', L'/');
+		std::wstring semname1 = L"Global\\WinSCard-x3U4_Lock" + str;
+		std::wstring semname2 = L"Local\\WinSCard-x3U4_Lock" + str;
+		std::wstring mapname1 = L"Global\\WinSCard-x3U4_MapFile" + str;
+		std::wstring mapname2 = L"Local\\WinSCard-x3U4_MapFile" + str;
 		l_hSemaphore = ::CreateSemaphoreW(NULL, 1, 1, semname1.c_str());
 		if (!l_hSemaphore) {
 			OutputDebug(L"InitDevice: Error creating Semaphore Object for Global Namespace. Trying OpenSemaphore().\n");
@@ -289,55 +276,55 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 {
 	switch (ul_reason_for_call) {
 	case DLL_PROCESS_ATTACH:
+	{
 		l_hModule = hModule;
 		DisableThreadLibraryCalls(hModule);
 		l_hStartedEvent = CreateEvent(NULL, TRUE, TRUE, NULL);
 		// iniファイルのpath取得
-		WCHAR szIniFilePath[_MAX_PATH + 1];
-		::GetModuleFileNameW(l_hModule, szIniFilePath, sizeof(szIniFilePath) / sizeof(szIniFilePath[0]));
-		::wcscpy_s(szIniFilePath + ::wcslen(szIniFilePath) - 3, 4, L"ini");
+		std::wstring tempPath = common::GetModuleName(l_hModule);
+		CIniFileAccess IniFileAccess(tempPath + L"ini");
+		IniFileAccess.SetSectionName(L"SCard");
 
 		// tunerのFriendlyName取得
-		WCHAR buf[256];
-		::GetPrivateProfileStringW(L"SCard", L"TunerFriendlyName", L"PXW3U4 Multi Tuner ISDB-T BDA Filter #0", buf, sizeof(buf) / sizeof(buf[0]), szIniFilePath);
-		::GetPrivateProfileStringW(L"SCard", L"FriendlyName", buf, buf, sizeof(buf) / sizeof(buf[0]), szIniFilePath);
-		COMProc.SetTunerFriendlyName(buf);
+		std::wstring name, dip;
+		name = IniFileAccess.ReadKeyS(L"TunerFriendlyName", L"PXW3U4 Multi Tuner ISDB-T BDA Filter #0");
+		name = IniFileAccess.ReadKeyS(L"FriendlyName", name);
+		// tunerのデバイスインスタンスパス取得
+		dip = IniFileAccess.ReadKeyS(L"TunerInstancePath", L"");
+		COMProc.SetTunerFriendlyName(name, dip);
 
 		// Debug Logを記録するかどうか
-		if (::GetPrivateProfileIntW(L"SCard", L"DebugLog", 0, szIniFilePath)) {
-			// INIファイルのファイル名取得
-			WCHAR szDebugLogPath[_MAX_PATH + 1];
-			::wcscpy_s(szDebugLogPath, ::wcslen(szIniFilePath) + 1, szIniFilePath);
-			::wcscpy_s(szDebugLogPath + ::wcslen(szIniFilePath) - 3, 4, L"log");
-			SetDebugLog(szDebugLogPath);
+		if (IniFileAccess.ReadKeyB(L"DebugLog", 0)) {
+			SetDebugLog(tempPath + L"log");
 		}
 
 		// 詳細Logを記録するかどうか
-		if (::GetPrivateProfileIntW(L"SCard", L"DetailLog", 0, szIniFilePath))
+		if (IniFileAccess.ReadKeyB(L"DetailLog", 0))
 			Protocol.SetDetailLog(TRUE);
 
 		// 送受信 Guard Interval 時間
 		// カード側は2～3msecもあれば十分なはずだけど何故かUARTReadyが落ちてしまうことがあるみたい
-		Protocol.SetGuardInterval(::GetPrivateProfileIntW(L"SCard", L"GuardInterval", 50, szIniFilePath));
+		Protocol.SetGuardInterval(IniFileAccess.ReadKeyI(L"GuardInterval", 50));
 
 		// IFD側の最大受信可能ブロックサイズ
 		// 本来設定する必要は無いけどM系カードの不具合検証用として用意しておく
-		IFSD = ::GetPrivateProfileIntW(L"SCard", L"IFSD", 254, szIniFilePath);
-
+		IFSD = IniFileAccess.ReadKeyI(L"IFSD", 254);
+	}
 		break;
 
 	case DLL_PROCESS_DETACH:
+	{
 		CloseAllHandle();
 		if (l_hStartedEvent) {
 			try {
-				::CloseHandle(l_hStartedEvent);
-				l_hStartedEvent = NULL;
+				SAFE_CLOSE_HANDLE(l_hStartedEvent);
 			}
 			catch (...) {
 			}
 		}
 		// デバッグログファイルのクローズ
 		CloseDebugLog();
+	}
 		break;
 	}
 

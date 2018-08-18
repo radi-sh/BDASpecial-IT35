@@ -21,6 +21,12 @@
     <ClCompile Include="IT35.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\common\CIniFileAccess.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\common.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="IT35.h">
@@ -41,12 +47,21 @@
     <ClInclude Include="IT35propset.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\common\CIniFileAccess.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\doc\BonDriver_PX_x3U4_S.ini">
       <Filter>doc</Filter>
     </None>
     <None Include="..\..\doc\BonDriver_PX_x3U4_T.ini">
+      <Filter>doc</Filter>
+    </None>
+    <None Include="..\..\doc\BonDriver_1T1S.ini">
+      <Filter>doc</Filter>
+    </None>
+    <None Include="..\..\doc\BonDriver_5T.ini">
       <Filter>doc</Filter>
     </None>
   </ItemGroup>

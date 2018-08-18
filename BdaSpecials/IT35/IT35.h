@@ -2,7 +2,7 @@
 
 #include "IBdaSpecials2.h"
 
-class CIT35Specials : public IBdaSpecials2a1
+class CIT35Specials : public IBdaSpecials2a2
 {
 public:
 	CIT35Specials(HMODULE hMySelf, CComPtr<IBaseFilter> pTunerDevice);
@@ -20,7 +20,7 @@ public:
 	const HRESULT Set22KHz(long nTone);
 	const HRESULT LockChannel(const TuningParam *pTuningParm);
 
-	const HRESULT ReadIniFile(WCHAR *szIniFilePath);
+	const HRESULT ReadIniFile(const WCHAR *szIniFilePath);
 	const HRESULT IsDecodingNeeded(BOOL *pbAns);
 	const HRESULT Decode(BYTE *pBuf, DWORD dwSize);
 	const HRESULT GetSignalStrength(float *fVal);
@@ -34,8 +34,10 @@ private:
 	CComPtr<IBaseFilter> m_pTunerDevice;
 	IKsPropertySet *m_pIKsPropertySet;
 	CRITICAL_SECTION m_CriticalSection;
+	ModulationType m_CurrentModulationType;
 
 	BOOL m_bRewriteIFFreq;			// IF周波数で put_CarrierFrequency() を行う
 	BOOL m_bPrivateSetTSID;			// 固有の Property set を使用してTSIDの書込みが必要
 	BOOL m_bLNBPowerON;				// LNB電源の供給をONする
+	BOOL m_bDualModeISDB;			// Dual Mode ISDB Tuner
 };

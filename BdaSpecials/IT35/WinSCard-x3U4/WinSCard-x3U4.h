@@ -1,5 +1,9 @@
 #pragma once
 
+#include "t1.h"
+
+#include <Windows.h>
+
 #ifdef _WIN64
 #pragma comment(linker, "/EXPORT:SCardConnectA=SCardConnectA_")
 #pragma comment(linker, "/EXPORT:SCardConnectW=SCardConnectW_")

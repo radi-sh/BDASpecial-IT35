@@ -42,6 +42,9 @@
     <ClInclude Include="..\..\..\common\WaitWithMsg.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\common\CIniFileAccess.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\CardReader\atr.cpp">
@@ -59,9 +62,15 @@
     <ClCompile Include="..\..\..\common\DSFilterEnum.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\common\CIniFileAccess.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\common.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\doc\WinSCard-x3U4.ini">
+    <None Include="..\..\..\doc\WinSCard-x3U4\WinSCard.ini">
       <Filter>doc</Filter>
     </None>
   </ItemGroup>

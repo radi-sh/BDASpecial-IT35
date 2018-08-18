@@ -234,9 +234,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\common\CIniFileAccess.cpp" />
+    <ClCompile Include="..\..\common\common.cpp" />
     <ClCompile Include="IT35.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\common\CIniFileAccess.h" />
     <ClInclude Include="..\..\common\common.h" />
     <ClInclude Include="..\..\common\IBdaSpecials.h" />
     <ClInclude Include="..\..\common\IBdaSpecials2.h" />
@@ -245,6 +248,8 @@
     <ClInclude Include="IT35propset.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\doc\BonDriver_1T1S.ini" />
+    <None Include="..\..\doc\BonDriver_5T.ini" />
     <None Include="..\..\doc\BonDriver_PX_x3U4_S.ini" />
     <None Include="..\..\doc\BonDriver_PX_x3U4_T.ini" />
   </ItemGroup>

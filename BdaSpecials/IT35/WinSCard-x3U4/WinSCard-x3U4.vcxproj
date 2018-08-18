@@ -242,6 +242,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\CardReader\atr.h" />
     <ClInclude Include="..\..\..\CardReader\t1.h" />
+    <ClInclude Include="..\..\..\common\CIniFileAccess.h" />
     <ClInclude Include="..\..\..\common\common.h" />
     <ClInclude Include="..\..\..\common\DSFilterEnum.h" />
     <ClInclude Include="..\..\..\common\WaitWithMsg.h" />
@@ -252,12 +253,14 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\CardReader\atr.cpp" />
     <ClCompile Include="..\..\..\CardReader\t1.cpp" />
+    <ClCompile Include="..\..\..\common\CIniFileAccess.cpp" />
+    <ClCompile Include="..\..\..\common\common.cpp" />
     <ClCompile Include="..\..\..\common\DSFilterEnum.cpp" />
     <ClCompile Include="CCOMProc-x3U4.cpp" />
     <ClCompile Include="WinSCard-x3U4.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\..\doc\WinSCard-x3U4.ini" />
+    <None Include="..\..\..\doc\WinSCard-x3U4\WinSCard.ini" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

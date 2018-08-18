@@ -1,6 +1,9 @@
+#include "common.h"
+
+#include "CCOMProc-x3U4Remocon.h"
+
 #include <Windows.h>
 
-#include <iostream>
 #include <DShow.h>
 
 // KSCATEGORY_...
@@ -12,17 +15,11 @@
 #include <bdatypes.h>
 #include <bdamedia.h>
 
-#include "common.h"
-#include "IT35propset.h"
 #include "DSFilterEnum.h"
-
-#include "CCOMProc-x3U4Remocon.h"
-
 #include "WaitWithMsg.h"
+#include "IT35propset.h"
 
 #pragma comment(lib, "Strmiids.lib")
-
-using namespace std;
 
 CCOMProc::CCOMProc(void)
 	: hThread(NULL),
@@ -42,25 +39,18 @@ CCOMProc::~CCOMProc(void)
 	if (hThread) {
 		::SetEvent(hTerminateRequest);
 		::WaitForSingleObject(hThread, 1000);
-		::CloseHandle(hThread);
-		hThread = NULL;
+		SAFE_CLOSE_HANDLE(hThread);
 	}
-	if (hThreadInitComp) {
-		::CloseHandle(hThreadInitComp);
-		hThreadInitComp = NULL;
-	}
-	if (hTerminateRequest) {
-		::CloseHandle(hTerminateRequest);
-		hTerminateRequest = NULL;
-	}
+	SAFE_CLOSE_HANDLE(hThreadInitComp);
+	SAFE_CLOSE_HANDLE(hTerminateRequest);
 	::DeleteCriticalSection(&csLock);
 
 	return;
 };
 
-void CCOMProc::SetTunerFriendlyName(wstring name)
-{
-	TunerFriendlyName = name;
+void CCOMProc::SetTunerFriendlyName(std::wstring friendlyName, std::wstring instancePath) {
+	TunerFriendlyName = friendlyName;
+	TunerInstancePath = common::WStringToUpperCase(instancePath);
 
 	return;
 };
@@ -91,7 +81,7 @@ BOOL CCOMProc::CreateThread(void)
 	case WAIT_OBJECT_0:
 	default:
 		try {
-			::CloseHandle(hThreadTemp);
+			SAFE_CLOSE_HANDLE(hThreadTemp);
 		}
 		catch (...) {
 		}
@@ -117,7 +107,7 @@ void CCOMProc::CloseThreadHandle(void)
 {
 	if (hThread) {
 		try {
-			::CloseHandle(hThread);
+			SAFE_CLOSE_HANDLE(hThread);
 		}
 		catch (...) {
 		}
@@ -151,8 +141,8 @@ DWORD WINAPI CCOMProc::COMProcThread(LPVOID lpParameter)
 	OutputDebug(L"COMProcThread: CoInitializeEx() returned 0x%x.\n", hr);
 
 	try {
-		wstring name;
-		wstring guid;
+		std::wstring name;
+		std::wstring guid;
 
 		CDSFilterEnum dsfEnum(KSCATEGORY_BDA_NETWORK_TUNER, CDEF_DEVMON_PNP_DEVICE);
 
@@ -162,6 +152,15 @@ DWORD WINAPI CCOMProc::COMProcThread(LPVOID lpParameter)
 			dsfEnum.getDisplayName(&guid);
 			if (size_t pos = name.find(pCOMProc->TunerFriendlyName) != 0)
 				continue;
+			if (pCOMProc->TunerInstancePath != L"") {
+				// デバイスインスタンスパスが一致するか確認
+				std::wstring dip = CDSFilterEnum::getDeviceInstancePathrFromDisplayName(guid);
+				OutputDebug(L"COMProcThread: DeviceInstancePath = %s\n", dip.c_str());
+				if (dip != pCOMProc->TunerInstancePath) {
+					OutputDebug(L"COMProcThread: DeviceInstancePath did not match.\n");
+					continue;
+				}
+			}
 
 			// チューナーデバイス取得
 			if (FAILED(hr = dsfEnum.getFilter(&pTunerDevice))) {

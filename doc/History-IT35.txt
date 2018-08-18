@@ -23,3 +23,12 @@
 ・プラットフォームツールセットをVisual Studio 2017 - Windows XPに変更
 ・BonDriver_BDAの最新版に合わせた変更
 ・各iniファイルにPX-W3PE4/PX-Q3PE4に関する情報を追加
+
+【2018-08-18】
+・BonDriver_BDAのiniファイルの記述方法変更に対応して付属のiniファイルを変更
+　従来のiniファイル書式のままでも認識可能です
+・WinSCard.iniとx3U4Remocon.iniで、デバイスインスタンスを指定できるようにした
+・DTV02-5T-P用のiniファイルを追加
+・DTV02-1T1S-Uに対応
+・古いBDA Driver以外ではSignalLevelの値が100超に張り付いてしまう問題を修正
+※ BonDriver_BDA改-20180818より前のバージョンでは動作しませんのでご注意ください。

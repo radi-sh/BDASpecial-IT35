@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Windows.h>
 #include <string>
 
 class CCOMProc {
@@ -53,13 +54,14 @@ private:
 	COMReqParam Param;				// パラメータ
 	HRESULT RetCode;				// 終了コード
 	CRITICAL_SECTION csLock;		// 排他用
-	std::wstring TunerFriendlyName;
-	std::wstring TunerDisplayName;
+	std::wstring TunerFriendlyName;	// チューナー識別用FriendlyName
+	std::wstring TunerInstancePath; // チューナー識別用デバイスインスタンスパス
+	std::wstring TunerDisplayName;  // チューナーから取得したDisplayName
 
 public:
 	CCOMProc(void);
 	~CCOMProc(void);
-	void SetTunerFriendlyName(std::wstring name);
+	void SetTunerFriendlyName(std::wstring friendlyName, std::wstring instancePath);
 	std::wstring GetTunerDisplayName(void);
 	BOOL CreateThread(void);
 	void TerminateThread(void);
