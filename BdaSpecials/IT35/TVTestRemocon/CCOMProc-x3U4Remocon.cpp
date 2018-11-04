@@ -126,8 +126,8 @@ void CCOMProc::SetCallback(RemoconCallbackFunc pFunc, LPARAM pParam)
 
 DWORD WINAPI CCOMProc::COMProcThread(LPVOID lpParameter)
 {
-	IBaseFilter *pTunerDevice = NULL;
-	IKsPropertySet *pIKsPropertySet = NULL;
+	CComPtr<IBaseFilter> pTunerDevice;
+	CComPtr<IKsPropertySet> pIKsPropertySet;
 	BOOL terminate = TRUE;
 	CCOMProc* pCOMProc = (CCOMProc*)lpParameter;
 
@@ -169,7 +169,7 @@ DWORD WINAPI CCOMProc::COMProcThread(LPVOID lpParameter)
 			}
 
 			// IKsPropertySet ‚ðŽæ“¾
-			if (FAILED(hr = pTunerDevice->QueryInterface(IID_IKsPropertySet, (LPVOID*)&pIKsPropertySet))) {
+			if (FAILED(hr = pTunerDevice.QueryInterface(&pIKsPropertySet))) {
 				OutputDebug(L"COMProcThread: Error in get IKsPropertySet.\n");
 				break;
 			}
@@ -213,9 +213,6 @@ DWORD WINAPI CCOMProc::COMProcThread(LPVOID lpParameter)
 			break;
 		} // switch (ret)
 	} // while (!terminate)
-
-	SAFE_RELEASE(pIKsPropertySet);
-	SAFE_RELEASE(pTunerDevice);
 
 	OutputDebug(L"COMProcThread: Doing CoUninitialize().\n");
 	::CoUninitialize();
