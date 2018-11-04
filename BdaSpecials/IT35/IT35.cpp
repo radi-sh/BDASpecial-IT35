@@ -65,7 +65,7 @@ __declspec(dllexport) HRESULT CheckCapture(const WCHAR *szTunerDisplayName, cons
 CIT35Specials::CIT35Specials(HMODULE hMySelf, CComPtr<IBaseFilter> pTunerDevice)
 	: m_hMySelf(hMySelf),
 	  m_pTunerDevice(pTunerDevice),
-	  m_pIKsPropertySet(NULL),
+	  m_pIKsPropertySet(m_pTunerDevice),
 	  m_CurrentModulationType(BDA_MOD_NOT_SET),
 	  m_bRewriteIFFreq(FALSE),
 	  m_bPrivateSetTSID(FALSE),
@@ -74,23 +74,12 @@ CIT35Specials::CIT35Specials(HMODULE hMySelf, CComPtr<IBaseFilter> pTunerDevice)
 {
 	::InitializeCriticalSection(&m_CriticalSection);
 
-	HRESULT hr;
-
-	hr = m_pTunerDevice->QueryInterface(IID_IKsPropertySet, (LPVOID*)&m_pIKsPropertySet);
-
 	return;
 }
 
 CIT35Specials::~CIT35Specials()
 {
 	m_hMySelf = NULL;
-
-	SAFE_RELEASE(m_pIKsPropertySet);
-
-	if (m_pTunerDevice) {
-		m_pTunerDevice.Release();
-		m_pTunerDevice = NULL; 
-	}
 
 	::DeleteCriticalSection(&m_CriticalSection);
 
@@ -236,10 +225,9 @@ const HRESULT CIT35Specials::PreTuneRequest(const TuningParam *pTuningParm, ITun
 			}
 
 			CComPtr<ILocator> pILocator;
-			hr = pITuneRequest->get_Locator(&pILocator);
-			if (FAILED(hr) || !pILocator) {
-				OutputDebug(L"ITuneRequest->get_Locator failed.\n");
-				return E_FAIL;
+			if (FAILED(hr = pITuneRequest->get_Locator(&pILocator))) {
+				OutputDebug(L"ITuneRequest::get_Locator failed.\n");
+				return hr;
 			}
 
 			pILocator->put_CarrierFrequency(freq);
