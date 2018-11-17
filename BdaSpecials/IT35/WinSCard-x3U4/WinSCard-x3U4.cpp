@@ -21,7 +21,6 @@ static const WCHAR LIST_READERS_W[] = L"Plex PX-x3U4 Card Reader 0\0";
 
 static BYTE IFSD = 254;						// IFD側の最大受信可能ブロックサイズ
 
-static BOOL l_bInitialized = FALSE;
 static DWORD l_dwEstablishedContext = 0;
 static HANDLE l_hStartedEvent = NULL;
 static HMODULE l_hModule = NULL;
@@ -33,6 +32,7 @@ static SharedMemory *l_pShMem = NULL;
 static CParseATR ParseATR;
 static CCOMProc COMProc;
 static CComProtocolT1x3U4 Protocol;
+static CRITICAL_SECTION l_csInit;
 
 static void CloseAllHandle(void) {
 	if (l_pShMem) {
@@ -66,9 +66,6 @@ static void ProcATR(BYTE *atr) {
 }
 
 static BOOL InitDevice(void) {
-	if (l_bInitialized)
-		return TRUE;
-
 	OutputDebug(L"InitDevice: Started.\n");
 
 	if (!COMProc.CreateThread()) {
@@ -122,8 +119,6 @@ static BOOL InitDevice(void) {
 			ProcATR(l_pShMem->ATR);
 			OutputDebug(L"InitDevice: ATR was read from shared memory.\n");
 		}
-
-		l_bInitialized = TRUE;
 
 		OutputDebug(L"InitDevice: Completed.\n");
 		return TRUE;
@@ -280,6 +275,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 		l_hModule = hModule;
 		DisableThreadLibraryCalls(hModule);
 		l_hStartedEvent = CreateEvent(NULL, TRUE, TRUE, NULL);
+		::InitializeCriticalSection(&l_csInit);
 		// iniファイルのpath取得
 		std::wstring tempPath = common::GetModuleName(l_hModule);
 		CIniFileAccess IniFileAccess(tempPath + L"ini");
@@ -315,6 +311,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 	case DLL_PROCESS_DETACH:
 	{
 		CloseAllHandle();
+		::DeleteCriticalSection(&l_csInit);
 		if (l_hStartedEvent) {
 			try {
 				SAFE_CLOSE_HANDLE(l_hStartedEvent);
@@ -334,7 +331,10 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 LONG WINAPI SCardConnectA_(SCARDCONTEXT hContext, LPCSTR szReader, DWORD dwShareMode, DWORD dwPreferredProtocols, LPSCARDHANDLE phCard, LPDWORD pdwActiveProtocol)
 {
 	if (!l_pShMem) {
-		if (!InitDevice()) {
+		::EnterCriticalSection(&l_csInit);
+		BOOL suc = InitDevice();
+		::LeaveCriticalSection(&l_csInit);
+		if (!suc) {
 			OutputDebug(L"SCardConnectA: Error in InitDevice()\n");
 			return SCARD_E_NO_ACCESS;
 		}
@@ -362,7 +362,10 @@ LONG WINAPI SCardConnectA_(SCARDCONTEXT hContext, LPCSTR szReader, DWORD dwShare
 LONG WINAPI SCardConnectW_(SCARDCONTEXT hContext, LPWSTR szReader, DWORD dwShareMode, DWORD dwPreferredProtocols, LPSCARDHANDLE phCard, LPDWORD pdwActiveProtocol)
 {
 	if (!l_pShMem) {
-		if (!InitDevice()) {
+		::EnterCriticalSection(&l_csInit);
+		BOOL suc = InitDevice();
+		::LeaveCriticalSection(&l_csInit);
+		if (!suc) {
 			OutputDebug(L"SCardConnectW: Error in InitDevice()\n");
 			return SCARD_E_NO_ACCESS;
 		}
@@ -394,8 +397,10 @@ LONG WINAPI SCardDisconnect_(SCARDHANDLE hCard, DWORD dwDisposition)
 
 LONG WINAPI SCardEstablishContext_(DWORD dwScope, LPCVOID pvReserved1, LPCVOID pvReserved2, LPSCARDCONTEXT phContext)
 {
+	::EnterCriticalSection(&l_csInit);
 	l_dwEstablishedContext++;
 	OutputDebug(L"SCardEstablishContext: Count=%d.\n", l_dwEstablishedContext);
+	::LeaveCriticalSection(&l_csInit);
 
 	*phContext = DUMMY_SCARDCONTEXT;
 
@@ -458,6 +463,7 @@ LONG WINAPI SCardListReadersW_(SCARDCONTEXT hContext, LPCWSTR mszGroups, LPWSTR 
 
 LONG WINAPI SCardReleaseContext_(SCARDCONTEXT hContext)
 {
+	::EnterCriticalSection(&l_csInit);
 	if (l_dwEstablishedContext)
 		l_dwEstablishedContext--;
 	OutputDebug(L"SCardReleaseContext: Count=%d.\n", l_dwEstablishedContext);
@@ -466,6 +472,7 @@ LONG WINAPI SCardReleaseContext_(SCARDCONTEXT hContext)
 		COMProc.TerminateThread();
 		CloseAllHandle();
 	}
+	::LeaveCriticalSection(&l_csInit);
 
 	return SCARD_S_SUCCESS;
 }
