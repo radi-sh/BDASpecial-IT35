@@ -12,12 +12,12 @@
 
 FILE *g_fpLog = NULL;
 
-static const SCARDHANDLE DUMMY_SCARDHANDLE = 0x5ca2d4a1;
-static const SCARDCONTEXT DUMMY_SCARDCONTEXT = 0xc013e103;
-static const CHAR READER_NAME_A[] = "Plex PX-x3U4 Card Reader 0";
-static const WCHAR READER_NAME_W[] = L"Plex PX-x3U4 Card Reader 0";
-static const CHAR LIST_READERS_A[] = "Plex PX-x3U4 Card Reader 0\0";
-static const WCHAR LIST_READERS_W[] = L"Plex PX-x3U4 Card Reader 0\0";
+static constexpr SCARDHANDLE DUMMY_SCARDHANDLE = 0x5ca2d4a1;
+static constexpr SCARDCONTEXT DUMMY_SCARDCONTEXT = 0xc013e103;
+static constexpr CHAR READER_NAME_A[] = "Plex PX-x3U4 Card Reader 0";
+static constexpr WCHAR READER_NAME_W[] = L"Plex PX-x3U4 Card Reader 0";
+static constexpr CHAR LIST_READERS_A[] = "Plex PX-x3U4 Card Reader 0\0";
+static constexpr WCHAR LIST_READERS_W[] = L"Plex PX-x3U4 Card Reader 0\0";
 
 static BYTE IFSD = 254;						// IFD側の最大受信可能ブロックサイズ
 
