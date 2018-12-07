@@ -290,12 +290,12 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 		COMProc.SetTunerFriendlyName(name, dip);
 
 		// Debug Log‚ğ‹L˜^‚·‚é‚©‚Ç‚¤‚©
-		if (IniFileAccess.ReadKeyB(L"DebugLog", 0)) {
+		if (IniFileAccess.ReadKeyB(L"DebugLog", FALSE)) {
 			SetDebugLog(tempPath + L"log");
 		}
 
 		// Ú×Log‚ğ‹L˜^‚·‚é‚©‚Ç‚¤‚©
-		if (IniFileAccess.ReadKeyB(L"DetailLog", 0))
+		if (IniFileAccess.ReadKeyB(L"DetailLog", FALSE))
 			Protocol.SetDetailLog(TRUE);
 
 		// ‘—óM Guard Interval ŠÔ

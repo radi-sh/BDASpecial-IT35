@@ -167,7 +167,7 @@ bool CRemocon::InitializePlugin()
 		COMProc.SetTunerFriendlyName(name, dip);
 
 		// Debug Log‚ð‹L˜^‚·‚é‚©‚Ç‚¤‚©
-		if (IniFileAccess.ReadKeyB(L"DebugLog", 0)) {
+		if (IniFileAccess.ReadKeyB(L"DebugLog", FALSE)) {
 			SetDebugLog(tempPath + L"log");
 		}
 
