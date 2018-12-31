@@ -137,7 +137,7 @@ const HRESULT CIT35Specials::LockChannel(BYTE bySatellite, BOOL bHorizontal, uns
 	return E_NOINTERFACE;
 }
 
-const HRESULT CIT35Specials::LockChannel(const TuningParam *pTuningParm)
+const HRESULT CIT35Specials::LockChannel(const TuningParam *pTuningParam)
 {
 	return E_NOINTERFACE;
 }
@@ -186,7 +186,12 @@ const HRESULT CIT35Specials::GetSignalStrength(float *fVal)
 	return E_NOINTERFACE;
 }
 
-const HRESULT CIT35Specials::PreTuneRequest(const TuningParam *pTuningParm, ITuneRequest *pITuneRequest)
+const HRESULT CIT35Specials::PreLockChannel(const TuningParam *pTuningParam)
+{
+	return S_OK;
+}
+
+const HRESULT CIT35Specials::PreTuneRequest(const TuningParam *pTuningParam, ITuneRequest *pITuneRequest)
 {
 	if (!m_pIKsPropertySet)
 		return E_FAIL;
@@ -194,8 +199,8 @@ const HRESULT CIT35Specials::PreTuneRequest(const TuningParam *pTuningParm, ITun
 	HRESULT hr;
 
 	// Dual Mode ISDB Tuner‚Ìê‡‚ÍTC90532‚Ì•œ’²Mode‚ðÝ’è
-	if (m_bDualModeISDB && pTuningParm->Modulation->Modulation != m_CurrentModulationType) {
-		switch (pTuningParm->Modulation->Modulation) {
+	if (m_bDualModeISDB && pTuningParam->Modulation->Modulation != m_CurrentModulationType) {
+		switch (pTuningParam->Modulation->Modulation) {
 		case BDA_MOD_ISDB_T_TMCC:
 			hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, PRIVATE_IO_CTL_FUNC_DEMOD_OFDM);
 			break;
@@ -203,25 +208,25 @@ const HRESULT CIT35Specials::PreTuneRequest(const TuningParam *pTuningParm, ITun
 			hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, PRIVATE_IO_CTL_FUNC_DEMOD_PSK);
 			break;
 		}
-		m_CurrentModulationType = pTuningParm->Modulation->Modulation;
+		m_CurrentModulationType = pTuningParam->Modulation->Modulation;
 	}
 
 	// Dual Mode ISDB Tuner‚Ìê‡‚ÍISDB-S‚ÌŽž‚Ì‚Ý
-	if (!m_bDualModeISDB || pTuningParm->Modulation->Modulation == BDA_MOD_ISDB_S_TMCC) {
+	if (!m_bDualModeISDB || pTuningParam->Modulation->Modulation == BDA_MOD_ISDB_S_TMCC) {
 		// IFŽü”g”‚É•ÏŠ·
-		if (m_bRewriteIFFreq && pTuningParm->Antenna->HighOscillator != -1 || pTuningParm->Antenna->LowOscillator != -1) {
-			long freq = pTuningParm->Frequency;
-			if (pTuningParm->Antenna->LNBSwitch != -1) {
-				if (freq < pTuningParm->Antenna->LNBSwitch)
-					freq = freq - pTuningParm->Antenna->LowOscillator;
+		if (m_bRewriteIFFreq && pTuningParam->Antenna->HighOscillator != -1 || pTuningParam->Antenna->LowOscillator != -1) {
+			long freq = pTuningParam->Frequency;
+			if (pTuningParam->Antenna->LNBSwitch != -1) {
+				if (freq < pTuningParam->Antenna->LNBSwitch)
+					freq = freq - pTuningParam->Antenna->LowOscillator;
 				else
-					freq = freq - pTuningParm->Antenna->HighOscillator;
+					freq = freq - pTuningParam->Antenna->HighOscillator;
 			}
 			else {
-				if (pTuningParm->Antenna->Tone == 0)
-					freq = freq - pTuningParm->Antenna->LowOscillator;
+				if (pTuningParam->Antenna->Tone == 0)
+					freq = freq - pTuningParam->Antenna->LowOscillator;
 				else
-					freq = freq - pTuningParm->Antenna->HighOscillator;
+					freq = freq - pTuningParam->Antenna->HighOscillator;
 			}
 
 			CComPtr<ILocator> pILocator;
@@ -236,16 +241,16 @@ const HRESULT CIT35Specials::PreTuneRequest(const TuningParam *pTuningParm, ITun
 		}
 
 		// TSID‚ðSet‚·‚é
-		if (m_bPrivateSetTSID && pTuningParm->TSID != 0 && pTuningParm->TSID != -1) {
+		if (m_bPrivateSetTSID && pTuningParam->TSID != 0 && pTuningParam->TSID != -1) {
 			::EnterCriticalSection(&m_CriticalSection);
-			hr = it35_PutISDBIoCtl(m_pIKsPropertySet, (WORD)pTuningParm->TSID);
+			hr = it35_PutISDBIoCtl(m_pIKsPropertySet, (WORD)pTuningParam->TSID);
 			::LeaveCriticalSection(&m_CriticalSection);
 		}
 	}
 	return S_OK;
 }
 
-const HRESULT CIT35Specials::PostLockChannel(const TuningParam *pTuningParm)
+const HRESULT CIT35Specials::PostLockChannel(const TuningParam *pTuningParam)
 {
 	return S_OK;
 }
