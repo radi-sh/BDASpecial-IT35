@@ -68,7 +68,7 @@ CIT35Specials::CIT35Specials(HMODULE hMySelf, CComPtr<IBaseFilter> pTunerDevice)
 	  m_pIKsPropertySet(m_pTunerDevice),
 	  m_CurrentModulationType(BDA_MOD_NOT_SET),
 	  m_bRewriteIFFreq(FALSE),
-	  m_bPrivateSetTSID(FALSE),
+	  m_nPrivateSetTSID(enumPrivateSetTSID::ePrivateSetTSIDNone),
 	  m_bLNBPowerON(FALSE),
 	  m_bDualModeISDB(FALSE)
 {
@@ -150,14 +150,21 @@ const HRESULT CIT35Specials::SetLNBPower(bool bActive)
 
 const HRESULT CIT35Specials::ReadIniFile(const WCHAR *szIniFilePath)
 {
+	static const std::map<const std::wstring, const int, std::less<>> mapPrivateSetTSID = {
+		{ L"NO",      enumPrivateSetTSID::ePrivateSetTSIDNone },
+		{ L"YES",     enumPrivateSetTSID::ePrivateSetTSIDPreTR },
+		{ L"PRETR",   enumPrivateSetTSID::ePrivateSetTSIDPreTR },
+		{ L"POSTTR",  enumPrivateSetTSID::ePrivateSetTSIDPostTR },
+	};
+
 	CIniFileAccess IniFileAccess(szIniFilePath);
 	IniFileAccess.SetSectionName(L"IT35");
 
 	// IF周波数で put_CarrierFrequency() を行う
 	m_bRewriteIFFreq = IniFileAccess.ReadKeyB(L"RewriteIFFreq", FALSE);
 
-	// 固有の Property set を使用して TSID の書込みが必要
-	m_bPrivateSetTSID = IniFileAccess.ReadKeyB(L"PrivateSetTSID", FALSE);
+	// 固有の Property set を使用してTSIDの書込みを行うモード
+	m_nPrivateSetTSID = (enumPrivateSetTSID)IniFileAccess.ReadKeyIValueMap(L"PrivateSetTSID", enumPrivateSetTSID::ePrivateSetTSIDNone, mapPrivateSetTSID);
 
 	// LNB電源の供給をONする
 	m_bLNBPowerON = IniFileAccess.ReadKeyB(L"LNBPowerON", FALSE);
@@ -198,7 +205,7 @@ const HRESULT CIT35Specials::PreTuneRequest(const TuningParam *pTuningParam, ITu
 
 	HRESULT hr;
 
-	// Dual Mode ISDB Tunerの場合はTC90532の復調Modeを設定
+	// Dual Mode ISDB Tunerの場合はデモジュレーターの復調Modeを設定
 	if (m_bDualModeISDB && pTuningParam->Modulation->Modulation != m_CurrentModulationType) {
 		switch (pTuningParam->Modulation->Modulation) {
 		case BDA_MOD_ISDB_T_TMCC:
@@ -241,7 +248,7 @@ const HRESULT CIT35Specials::PreTuneRequest(const TuningParam *pTuningParam, ITu
 		}
 
 		// TSIDをSetする
-		if (m_bPrivateSetTSID && pTuningParam->TSID != 0 && pTuningParam->TSID != -1) {
+		if (m_nPrivateSetTSID == enumPrivateSetTSID::ePrivateSetTSIDPreTR && pTuningParam->TSID != 0 && pTuningParam->TSID != -1) {
 			::EnterCriticalSection(&m_CriticalSection);
 			hr = it35_PutISDBIoCtl(m_pIKsPropertySet, (WORD)pTuningParam->TSID);
 			::LeaveCriticalSection(&m_CriticalSection);
@@ -252,6 +259,17 @@ const HRESULT CIT35Specials::PreTuneRequest(const TuningParam *pTuningParam, ITu
 
 const HRESULT CIT35Specials::PostTuneRequest(const TuningParam * pTuningParam)
 {
+	if (!m_pIKsPropertySet)
+		return E_FAIL;
+
+	HRESULT hr;
+
+	// TSIDをSetする
+	if (m_nPrivateSetTSID == enumPrivateSetTSID::ePrivateSetTSIDPostTR && pTuningParam->TSID != 0 && pTuningParam->TSID != -1) {
+		::EnterCriticalSection(&m_CriticalSection);
+		hr = it35_PutISDBIoCtl(m_pIKsPropertySet, (WORD)pTuningParam->TSID);
+		::LeaveCriticalSection(&m_CriticalSection);
+	}
 	return S_OK;
 }
 
