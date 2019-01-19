@@ -36,7 +36,6 @@ private:
 	CComPtr<IBaseFilter> m_pTunerDevice;
 	CComQIPtr<IKsPropertySet> m_pIKsPropertySet;
 	CRITICAL_SECTION m_CriticalSection;
-	ModulationType m_CurrentModulationType;
 
 	// 固有の Property set を使用してTSIDの書込みを行うモード
 	enum enumPrivateSetTSID {

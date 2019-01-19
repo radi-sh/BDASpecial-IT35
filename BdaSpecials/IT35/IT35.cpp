@@ -66,7 +66,6 @@ CIT35Specials::CIT35Specials(HMODULE hMySelf, CComPtr<IBaseFilter> pTunerDevice)
 	: m_hMySelf(hMySelf),
 	  m_pTunerDevice(pTunerDevice),
 	  m_pIKsPropertySet(m_pTunerDevice),
-	  m_CurrentModulationType(BDA_MOD_NOT_SET),
 	  m_bRewriteIFFreq(FALSE),
 	  m_nPrivateSetTSID(enumPrivateSetTSID::ePrivateSetTSIDNone),
 	  m_bLNBPowerON(FALSE),
@@ -195,6 +194,31 @@ const HRESULT CIT35Specials::GetSignalStrength(float *fVal)
 
 const HRESULT CIT35Specials::PreLockChannel(TuningParam *pTuningParam)
 {
+	// IF周波数に変換
+	if (m_bRewriteIFFreq) {
+		long freq = pTuningParam->Frequency;
+		if (pTuningParam->Antenna->LNBSwitch != -1) {
+			if (pTuningParam->Frequency < pTuningParam->Antenna->LNBSwitch) {
+				if (pTuningParam->Frequency < pTuningParam->Antenna->LowOscillator && pTuningParam->Antenna->HighOscillator != -1)
+					pTuningParam->Frequency -= pTuningParam->Antenna->LowOscillator;
+			}
+			else {
+				if (pTuningParam->Frequency < pTuningParam->Antenna->HighOscillator && pTuningParam->Antenna->HighOscillator != -1)
+					pTuningParam->Frequency -= pTuningParam->Antenna->HighOscillator;
+			}
+		}
+		else {
+			if (pTuningParam->Antenna->Tone == 0) {
+				if (pTuningParam->Frequency < pTuningParam->Antenna->LowOscillator && pTuningParam->Antenna->HighOscillator != -1)
+					pTuningParam->Frequency -= pTuningParam->Antenna->LowOscillator;
+			}
+			else {
+				if (pTuningParam->Frequency < pTuningParam->Antenna->HighOscillator && pTuningParam->Antenna->HighOscillator != -1)
+					pTuningParam->Frequency -= pTuningParam->Antenna->HighOscillator;
+			}
+		}
+	}
+
 	return S_OK;
 }
 
@@ -206,7 +230,7 @@ const HRESULT CIT35Specials::PreTuneRequest(const TuningParam *pTuningParam, ITu
 	HRESULT hr;
 
 	// Dual Mode ISDB Tunerの場合はデモジュレーターの復調Modeを設定
-	if (m_bDualModeISDB && pTuningParam->Modulation->Modulation != m_CurrentModulationType) {
+	if (m_bDualModeISDB) {
 		switch (pTuningParam->Modulation->Modulation) {
 		case BDA_MOD_ISDB_T_TMCC:
 			hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, PRIVATE_IO_CTL_FUNC_DEMOD_OFDM);
@@ -215,44 +239,13 @@ const HRESULT CIT35Specials::PreTuneRequest(const TuningParam *pTuningParam, ITu
 			hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, PRIVATE_IO_CTL_FUNC_DEMOD_PSK);
 			break;
 		}
-		m_CurrentModulationType = pTuningParam->Modulation->Modulation;
 	}
 
-	// Dual Mode ISDB Tunerの場合はISDB-Sの時のみ
-	if (!m_bDualModeISDB || pTuningParam->Modulation->Modulation == BDA_MOD_ISDB_S_TMCC) {
-		// IF周波数に変換
-		if (m_bRewriteIFFreq && pTuningParam->Antenna->HighOscillator != -1 || pTuningParam->Antenna->LowOscillator != -1) {
-			long freq = pTuningParam->Frequency;
-			if (pTuningParam->Antenna->LNBSwitch != -1) {
-				if (freq < pTuningParam->Antenna->LNBSwitch)
-					freq = freq - pTuningParam->Antenna->LowOscillator;
-				else
-					freq = freq - pTuningParam->Antenna->HighOscillator;
-			}
-			else {
-				if (pTuningParam->Antenna->Tone == 0)
-					freq = freq - pTuningParam->Antenna->LowOscillator;
-				else
-					freq = freq - pTuningParam->Antenna->HighOscillator;
-			}
-
-			CComPtr<ILocator> pILocator;
-			if (FAILED(hr = pITuneRequest->get_Locator(&pILocator))) {
-				OutputDebug(L"ITuneRequest::get_Locator failed.\n");
-				return hr;
-			}
-
-			pILocator->put_CarrierFrequency(freq);
-
-			hr = pITuneRequest->put_Locator(pILocator);
-		}
-
-		// TSIDをSetする
-		if (m_nPrivateSetTSID == enumPrivateSetTSID::ePrivateSetTSIDPreTR && pTuningParam->TSID != 0 && pTuningParam->TSID != -1) {
-			::EnterCriticalSection(&m_CriticalSection);
-			hr = it35_PutISDBIoCtl(m_pIKsPropertySet, (WORD)pTuningParam->TSID);
-			::LeaveCriticalSection(&m_CriticalSection);
-		}
+	// TSIDをSetする
+	if (m_nPrivateSetTSID == enumPrivateSetTSID::ePrivateSetTSIDPreTR && pTuningParam->TSID != 0 && pTuningParam->TSID != -1) {
+		::EnterCriticalSection(&m_CriticalSection);
+		hr = it35_PutISDBIoCtl(m_pIKsPropertySet, (WORD)pTuningParam->TSID);
+		::LeaveCriticalSection(&m_CriticalSection);
 	}
 	return S_OK;
 }
