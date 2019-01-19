@@ -89,23 +89,23 @@ static constexpr GUID KSPROPSETID_IteExtension = { 0xc6efe5eb, 0x855a, 0x4f1b,{ 
 
 // ITE 拡張プロパティID
 enum KSPROPERTY_ITE_EXTENSION {
-	KSPROPERTY_ITE_EX_BULK_DATA = 0,					// get/set
-	KSPROPERTY_ITE_EX_BULK_DATA_NB,						// get/set
-	KSPROPERTY_ITE_EX_PID_FILTER_ON_OFF,				// set only
-	KSPROPERTY_ITE_EX_BAND_WIDTH,						// get/set
-	KSPROPERTY_ITE_EX_MERCURY_DRIVER_INFO,				// get only
-	KSPROPERTY_ITE_EX_MERCURY_DEVICE_INFO,				// get only
-	KSPROPERTY_ITE_EX_TS_DATA,							// get/set
-	KSPROPERTY_ITE_EX_OVL_CNT,							// get only
-	KSPROPERTY_ITE_EX_FREQ,								// get/set
-	KSPROPERTY_ITE_EX_RESET_USB,						// set only
-	KSPROPERTY_ITE_EX_MERCURY_REG,						// get/set
-	KSPROPERTY_ITE_EX_MERCURY_PVBER,					// get/set
-	KSPROPERTY_ITE_EX_MERCURY_REC_LEN,					// get/set
-	KSPROPERTY_ITE_EX_MERCURY_EEPROM,					// get/set
-	KSPROPERTY_ITE_EX_MERCURY_IR,						// get only	(ERROR_NOT_SUPORTED)
-	KSPROPERTY_ITE_EX_MERCURY_SIGNAL_STRENGTH,			// get only
-	KSPROPERTY_ITE_EX_CHANNEL_MODULATION = 99,			// get only
+	KSPROPERTY_ITE_EX_BULK_DATA = 0,					// get/set		MinData=4
+	KSPROPERTY_ITE_EX_BULK_DATA_NB,						// get/set		MinData=4
+	KSPROPERTY_ITE_EX_PID_FILTER_ON_OFF,				// set only		MinData=4
+	KSPROPERTY_ITE_EX_BAND_WIDTH,						// get/set		MinData=1
+	KSPROPERTY_ITE_EX_MERCURY_DRIVER_INFO,				// get only		MinData=1
+	KSPROPERTY_ITE_EX_MERCURY_DEVICE_INFO,				// get only		MinData=1
+	KSPROPERTY_ITE_EX_TS_DATA,							// get/set		MinData=4
+	KSPROPERTY_ITE_EX_OVL_CNT,							// get only		MinData=1
+	KSPROPERTY_ITE_EX_FREQ,								// get/set		MinData=1
+	KSPROPERTY_ITE_EX_RESET_USB,						// set only		MinData=1
+	KSPROPERTY_ITE_EX_MERCURY_REG,						// get/set		MinData=1
+	KSPROPERTY_ITE_EX_MERCURY_PVBER,					// get/set		MinData=1
+	KSPROPERTY_ITE_EX_MERCURY_REC_LEN,					// get/set		MinData=1
+	KSPROPERTY_ITE_EX_MERCURY_EEPROM,					// get/set		MinData=1
+	KSPROPERTY_ITE_EX_MERCURY_IR,						// get only		MinData=1	(ERROR_NOT_SUPORTED)
+	KSPROPERTY_ITE_EX_MERCURY_SIGNAL_STRENGTH,			// get only		MinData=1
+	KSPROPERTY_ITE_EX_CHANNEL_MODULATION = 99,			// get only		MinData=24
 };
 
 // DVB-S IO コントロール プロパティセット GUID
@@ -113,8 +113,8 @@ static constexpr GUID KSPROPSETID_DvbsIoCtl = { 0xf23fac2d, 0xe1af, 0x48e0,{ 0x8
 
 // DVB-S IO コントロール プロパティID
 enum KSPROPERTY_DVBS_IO_CTL {
-	KSPROPERTY_DVBS_IO_LNB_POWER = 0,					// get/set
-	KSPROPERTY_DVBS_IO_DiseqcLoad,						// set only
+	KSPROPERTY_DVBS_IO_LNB_POWER = 0,					// get/set		MinData=1
+	KSPROPERTY_DVBS_IO_DiseqcLoad,						// set only		MinData=1
 };
 
 // 拡張 IO コントロール プロパティセット GUID
@@ -122,11 +122,11 @@ static constexpr GUID KSPROPSETID_ExtIoCtl = { 0xf23fac2d, 0xe1af, 0x48e0,{ 0x8b
 
 // 拡張 IO コントロール プロパティ ID
 enum KSPROPERTY_EXT_IO_CTL {
-	KSPROPERTY_EXT_IO_DRV_DATA = 0,						// get/set
-	KSPROPERTY_EXT_IO_DEV_IO_CTL,						// get/set
-	KSPROPERTY_EXT_IO_UNUSED50 = 50,					// not used
-	KSPROPERTY_EXT_IO_UNUSED51 = 51,					// not used
-	KSPROPERTY_EXT_IO_ISDBT_IO_CTL = 200,				// set only
+	KSPROPERTY_EXT_IO_DRV_DATA = 0,						// get/set		MinData=1
+	KSPROPERTY_EXT_IO_DEV_IO_CTL,						// get/set		MinData=1
+	KSPROPERTY_EXT_IO_UNUSED50 = 50,					// not used		MinData=1
+	KSPROPERTY_EXT_IO_UNUSED51 = 51,					// not used		MinData=1
+	KSPROPERTY_EXT_IO_ISDBT_IO_CTL = 200,				// set only		MinData=1
 };
 
 // 拡張 IO コントロール KSPROPERTY_EXT_IO_DRV_DATA 用ファンクションコード
@@ -216,7 +216,8 @@ static constexpr GUID KSPROPSETID_PrivateIoCtl = { 0xede22531, 0x92e8, 0x4957,{ 
 
 // プライベート IO コントロール プロパティ ID
 enum KSPROPERTY_PRIVATE_IO_CTL {
-	KSPROPERTY_PRIVATE_IO_DIGIBEST_TUNER = 0,			// set only
+	KSPROPERTY_PRIVATE_IO_DIGIBEST_TUNER = 0,			// set only		MinData=1
+	KSPROPERTY_PRIVATE_IO_DIGIBEST_TUNER_PARAMETER,		// get/set		MinData=1
 };
 
 // プライベート IO コントロール KSPROPERTY_PRIVATE_IO_DIGIBEST_TUNER 用ファンクションコード
