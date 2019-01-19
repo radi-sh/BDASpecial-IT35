@@ -199,21 +199,21 @@ const HRESULT CIT35Specials::PreLockChannel(TuningParam *pTuningParam)
 		long freq = pTuningParam->Frequency;
 		if (pTuningParam->Antenna.LNBSwitch != -1) {
 			if (pTuningParam->Frequency < pTuningParam->Antenna.LNBSwitch) {
-				if (pTuningParam->Frequency < pTuningParam->Antenna.LowOscillator && pTuningParam->Antenna.HighOscillator != -1)
+				if (pTuningParam->Frequency > pTuningParam->Antenna.LowOscillator && pTuningParam->Antenna.HighOscillator != -1)
 					pTuningParam->Frequency -= pTuningParam->Antenna.LowOscillator;
 			}
 			else {
-				if (pTuningParam->Frequency < pTuningParam->Antenna.HighOscillator && pTuningParam->Antenna.HighOscillator != -1)
+				if (pTuningParam->Frequency > pTuningParam->Antenna.HighOscillator && pTuningParam->Antenna.HighOscillator != -1)
 					pTuningParam->Frequency -= pTuningParam->Antenna.HighOscillator;
 			}
 		}
 		else {
 			if (pTuningParam->Antenna.Tone == 0) {
-				if (pTuningParam->Frequency < pTuningParam->Antenna.LowOscillator && pTuningParam->Antenna.HighOscillator != -1)
+				if (pTuningParam->Frequency > pTuningParam->Antenna.LowOscillator && pTuningParam->Antenna.HighOscillator != -1)
 					pTuningParam->Frequency -= pTuningParam->Antenna.LowOscillator;
 			}
 			else {
-				if (pTuningParam->Frequency < pTuningParam->Antenna.HighOscillator && pTuningParam->Antenna.HighOscillator != -1)
+				if (pTuningParam->Frequency > pTuningParam->Antenna.HighOscillator && pTuningParam->Antenna.HighOscillator != -1)
 					pTuningParam->Frequency -= pTuningParam->Antenna.HighOscillator;
 			}
 		}
