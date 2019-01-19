@@ -2,7 +2,7 @@
 
 #include "IBdaSpecials2.h"
 
-class CIT35Specials : public IBdaSpecials2b1
+class CIT35Specials : public IBdaSpecials2b2
 {
 public:
 	CIT35Specials(HMODULE hMySelf, CComPtr<IBaseFilter> pTunerDevice);

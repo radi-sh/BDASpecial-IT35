@@ -197,24 +197,24 @@ const HRESULT CIT35Specials::PreLockChannel(TuningParam *pTuningParam)
 	// IF周波数に変換
 	if (m_bRewriteIFFreq) {
 		long freq = pTuningParam->Frequency;
-		if (pTuningParam->Antenna->LNBSwitch != -1) {
-			if (pTuningParam->Frequency < pTuningParam->Antenna->LNBSwitch) {
-				if (pTuningParam->Frequency < pTuningParam->Antenna->LowOscillator && pTuningParam->Antenna->HighOscillator != -1)
-					pTuningParam->Frequency -= pTuningParam->Antenna->LowOscillator;
+		if (pTuningParam->Antenna.LNBSwitch != -1) {
+			if (pTuningParam->Frequency < pTuningParam->Antenna.LNBSwitch) {
+				if (pTuningParam->Frequency < pTuningParam->Antenna.LowOscillator && pTuningParam->Antenna.HighOscillator != -1)
+					pTuningParam->Frequency -= pTuningParam->Antenna.LowOscillator;
 			}
 			else {
-				if (pTuningParam->Frequency < pTuningParam->Antenna->HighOscillator && pTuningParam->Antenna->HighOscillator != -1)
-					pTuningParam->Frequency -= pTuningParam->Antenna->HighOscillator;
+				if (pTuningParam->Frequency < pTuningParam->Antenna.HighOscillator && pTuningParam->Antenna.HighOscillator != -1)
+					pTuningParam->Frequency -= pTuningParam->Antenna.HighOscillator;
 			}
 		}
 		else {
-			if (pTuningParam->Antenna->Tone == 0) {
-				if (pTuningParam->Frequency < pTuningParam->Antenna->LowOscillator && pTuningParam->Antenna->HighOscillator != -1)
-					pTuningParam->Frequency -= pTuningParam->Antenna->LowOscillator;
+			if (pTuningParam->Antenna.Tone == 0) {
+				if (pTuningParam->Frequency < pTuningParam->Antenna.LowOscillator && pTuningParam->Antenna.HighOscillator != -1)
+					pTuningParam->Frequency -= pTuningParam->Antenna.LowOscillator;
 			}
 			else {
-				if (pTuningParam->Frequency < pTuningParam->Antenna->HighOscillator && pTuningParam->Antenna->HighOscillator != -1)
-					pTuningParam->Frequency -= pTuningParam->Antenna->HighOscillator;
+				if (pTuningParam->Frequency < pTuningParam->Antenna.HighOscillator && pTuningParam->Antenna.HighOscillator != -1)
+					pTuningParam->Frequency -= pTuningParam->Antenna.HighOscillator;
 			}
 		}
 	}
@@ -231,7 +231,7 @@ const HRESULT CIT35Specials::PreTuneRequest(const TuningParam *pTuningParam, ITu
 
 	// Dual Mode ISDB Tunerの場合はデモジュレーターの復調Modeを設定
 	if (m_bDualModeISDB) {
-		switch (pTuningParam->Modulation->Modulation) {
+		switch (pTuningParam->Modulation.Modulation) {
 		case BDA_MOD_ISDB_T_TMCC:
 			hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, PRIVATE_IO_CTL_FUNC_DEMOD_OFDM);
 			break;
