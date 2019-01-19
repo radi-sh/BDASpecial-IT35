@@ -186,7 +186,7 @@ const HRESULT CIT35Specials::GetSignalStrength(float *fVal)
 	return E_NOINTERFACE;
 }
 
-const HRESULT CIT35Specials::PreLockChannel(const TuningParam *pTuningParam)
+const HRESULT CIT35Specials::PreLockChannel(TuningParam *pTuningParam)
 {
 	return S_OK;
 }
@@ -247,6 +247,11 @@ const HRESULT CIT35Specials::PreTuneRequest(const TuningParam *pTuningParam, ITu
 			::LeaveCriticalSection(&m_CriticalSection);
 		}
 	}
+	return S_OK;
+}
+
+const HRESULT CIT35Specials::PostTuneRequest(const TuningParam * pTuningParam)
+{
 	return S_OK;
 }
 
