@@ -616,7 +616,7 @@ static inline HRESULT it35_Unk101(IKsPropertySet *pIKsPropertySet)
 // 拡張 IO コントロール KSPROPERTY_EXT_IO_ISDBT_IO_CTL 用関数
 //
 // TSID をセット
-static inline HRESULT it35_PutISDBIoCtl(IKsPropertySet *pIKsPropertySet, WORD dwData)
+static inline HRESULT it35_PutISDBIoCtl(IKsPropertySet *pIKsPropertySet, DWORD dwData)
 {
 	return pIKsPropertySet->Set(KSPROPSETID_ExtIoCtl, KSPROPERTY_EXT_IO_ISDBT_IO_CTL, NULL, 0, &dwData, sizeof(dwData));
 }

@@ -244,7 +244,7 @@ const HRESULT CIT35Specials::PreTuneRequest(const TuningParam *pTuningParam, ITu
 	// TSID‚ðSet‚·‚é
 	if (m_nPrivateSetTSID == enumPrivateSetTSID::ePrivateSetTSIDPreTR && pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_S_TMCC) {
 		::EnterCriticalSection(&m_CriticalSection);
-		hr = it35_PutISDBIoCtl(m_pIKsPropertySet, pTuningParam->TSID == 0 ? 0xffff : (WORD)pTuningParam->TSID);
+		hr = it35_PutISDBIoCtl(m_pIKsPropertySet, pTuningParam->TSID == 0 ? (DWORD)-1 : (DWORD)pTuningParam->TSID);
 		::LeaveCriticalSection(&m_CriticalSection);
 	}
 	return S_OK;
@@ -260,7 +260,7 @@ const HRESULT CIT35Specials::PostTuneRequest(const TuningParam * pTuningParam)
 	// TSID‚ðSet‚·‚é
 	if (m_nPrivateSetTSID == enumPrivateSetTSID::ePrivateSetTSIDPostTR && pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_S_TMCC) {
 		::EnterCriticalSection(&m_CriticalSection);
-		hr = it35_PutISDBIoCtl(m_pIKsPropertySet, pTuningParam->TSID == 0 ? 0xffff : (WORD)pTuningParam->TSID);
+		hr = it35_PutISDBIoCtl(m_pIKsPropertySet, pTuningParam->TSID == 0 ? (DWORD)-1 : (DWORD)pTuningParam->TSID);
 		::LeaveCriticalSection(&m_CriticalSection);
 	}
 	return S_OK;
