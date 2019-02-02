@@ -1,5 +1,5 @@
 Digibest系チューナー用BDASpecialプラグイン
-  PX-Q3PE4/PX-W3PE4/PX-Q3U4/PX-W3U4/DTV02-5T-P/DTV02-1T1S-U内蔵カードリーダー用WinSCard.dll付属
+  PX-MLT5PE/PX-Q3PE4/PX-W3PE4/PX-Q3U4/PX-W3U4/DTV02-5T-P/DTV02-1T1S-U内蔵カードリーダー用WinSCard.dll付属
   PX-Q3U4/PX-W3U4付属リモコン用TVTestプラグイン付属
 
 【これは何？】
@@ -8,10 +8,11 @@ BonDriver_BDA.dllと組み合わせて使用します。
 また、付属のWinSCard.dllを使用することにより、内臓カードリーダーを任意のアプリで利用することができます。
 
 【動作環境】
-Windows XP以降 (x86/x64)
+Windows XP/Vista/7/8/8.1/10 (x86/x64)
 
 【対応チューナー】
 下記のチューナーに対応しています（たぶん）。
+  Plex PX-MLT5PE
   Plex PX-Q3PE4
   Plex PX-W3PE4
   Plex PX-Q3U4
@@ -24,10 +25,10 @@ Plex社製/e-Better社製でもDigibest社OEM製品以外のもの、IT9300系�
 1. BonDriver_BDAの入手
 下記URLより、最新バージョンのBonDriver_BDAを入手してください。
 https://github.com/radi-sh/BonDriver_BDA/releases
-※ BonDriver_BDA改-20180818より前のバージョンでは動作しませんのでご注意ください。
+※ BonDriver_BDA改-20190202より前のバージョンでは動作しませんのでご注意ください。
 
-2. x86/x64と通常版/ランタイム内蔵版の選択
-BonDriver_BDA付属のReadme-BonDriver_BDAを参考に、BonDriver_BDAと同じものを選択してください。
+2. 使用するファイル（32ビット用/64ビット用、Windows XP用/Windows Vista以降用、通常版/ランタイム内蔵版）の選択
+BonDriver_BDA付属のReadme-BonDriver_BDAを参考に、BonDriver_BDAと同じ種類のものを選択してください。
 
 3. Visual C++ 再頒布可能パッケージのインストール
 BonDriver_BDA付属のReadme-BonDriver_BDAを参考に、インストールしてください。
@@ -37,6 +38,7 @@ BonDriver_BDA付属のReadme-BonDriver_BDAを参考に、インストールし�
   通常、ファイル名が"BonDriver_"から始まる必要がありますのでご注意ください。
 ・用意したdllと同じ名前のiniファイルを配置
   下記のサンプルiniファイルを基に作成してください。
+    -BonDriver_PX_MLT5PE.ini   (PX-MLT5PE 地デジ&衛星用)
     -BonDriver_PX_x3U4_T.ini   (PX-Q3PE4/W3PE4/Q3U4/W3U4 地デジ用)
     -BonDriver_PX_x3U4_S.ini   (PX-Q3PE4/W3PE4/Q3U4/W3U4 衛星用)
     -BonDriver_5T.ini          (DTV02-5T-P 地デジ用)
@@ -74,7 +76,7 @@ https://github.com/radi-sh/BDASpecial-PlexPX/releases
 
 ・不具合報告等
 専用のサポート場所はありません。
-5chの映像制作板の該当スレを探して書込むとそのうち何か反応があるかもしれません。
+5chのDTV板で該当スレを探して書込むとそのうち何か反応があるかもしれません。
 作者は多忙を言い訳にあまりスレを見ていない傾向に有りますがご容赦ください。
 
 【免責事項】

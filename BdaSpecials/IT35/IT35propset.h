@@ -4,7 +4,7 @@
 //
 // Broadcast Driver Architecture で定義されている Property set / Method set
 //
-static const GUID KSPROPSETID_BdaFrequencyFilter = { 0x71985f47, 0x1ca1, 0x11d3,{ 0x9c, 0xc8, 0x0, 0xc0, 0x4f, 0x79, 0x71, 0xe0 } };
+static constexpr GUID KSPROPSETID_BdaFrequencyFilter = { 0x71985f47, 0x1ca1, 0x11d3,{ 0x9c, 0xc8, 0x0, 0xc0, 0x4f, 0x79, 0x71, 0xe0 } };
 
 enum KSPROPERTY_BDA_FREQUENCY_FILTER {
 	KSPROPERTY_BDA_RF_TUNER_FREQUENCY = 0,				// get/set
@@ -19,7 +19,7 @@ enum KSPROPERTY_BDA_FREQUENCY_FILTER {
 	KSPROPERTY_BDA_RF_TUNER_STANDARD_MODE,				// not supported
 };
 
-static const GUID KSPROPSETID_BdaSignalStats = { 0x1347d106, 0xcf3a, 0x428a,{ 0xa5, 0xcb, 0xac, 0xd, 0x9a, 0x2a, 0x43, 0x38 } };
+static constexpr GUID KSPROPSETID_BdaSignalStats = { 0x1347d106, 0xcf3a, 0x428a,{ 0xa5, 0xcb, 0xac, 0xd, 0x9a, 0x2a, 0x43, 0x38 } };
 
 enum KSPROPERTY_BDA_SIGNAL_STATS {
 	KSPROPERTY_BDA_SIGNAL_STRENGTH = 0,					// get only
@@ -29,7 +29,7 @@ enum KSPROPERTY_BDA_SIGNAL_STATS {
 	KSPROPERTY_BDA_SAMPLE_TIME,							// get only
 };
 
-static const GUID KSPROPSETID_BdaDigitalDemodulator = { 0xef30f379, 0x985b, 0x4d10,{ 0xb6, 0x40, 0xa7, 0x9d, 0x5e, 0x4, 0xe1, 0xe0 } };
+static constexpr GUID KSPROPSETID_BdaDigitalDemodulator = { 0xef30f379, 0x985b, 0x4d10,{ 0xb6, 0x40, 0xa7, 0x9d, 0x5e, 0x4, 0xe1, 0xe0 } };
 
 enum KSPROPERTY_BDA_DIGITAL_DEMODULATOR {
 	KSPROPERTY_BDA_MODULATION_TYPE = 0,					// get/set
@@ -46,7 +46,7 @@ enum KSPROPERTY_BDA_DIGITAL_DEMODULATOR {
 	KSPROPERTY_BDA_SIGNALTIMEOUTS,						// not supported
 };
 
-static const GUID KSPROPSETID_BdaLNBInfo = { 0x992cf102, 0x49f9, 0x4719,{ 0xa6, 0x64, 0xc4, 0xf2, 0x3e, 0x24, 0x8, 0xf4 } };
+static constexpr GUID KSPROPSETID_BdaLNBInfo = { 0x992cf102, 0x49f9, 0x4719,{ 0xa6, 0x64, 0xc4, 0xf2, 0x3e, 0x24, 0x8, 0xf4 } };
 
 enum KSPROPERTY_BDA_LNB_INFO {
 	KSPROPERTY_BDA_LNB_LOF_LOW_BAND = 0,				// get/set
@@ -54,7 +54,7 @@ enum KSPROPERTY_BDA_LNB_INFO {
 	KSPROPERTY_BDA_LNB_SWITCH_FREQUENCY,				// get/set
 };
 
-static const GUID KSPROPSETID_BdaPIDFilter = { 0xd0a67d65, 0x8df, 0x4fec,{ 0x85, 0x33, 0xe5, 0xb5, 0x50, 0x41, 0xb, 0x85 } };
+static constexpr GUID KSPROPSETID_BdaPIDFilter = { 0xd0a67d65, 0x8df, 0x4fec,{ 0x85, 0x33, 0xe5, 0xb5, 0x50, 0x41, 0xb, 0x85 } };
 
 enum KSPROPERTY_BDA_PIDFILTER {
 	KSPROPERTY_BDA_PIDFILTER_MAP_PIDS = 0,				// set only
@@ -62,7 +62,7 @@ enum KSPROPERTY_BDA_PIDFILTER {
 	KSPROPERTY_BDA_PIDFILTER_LIST_PIDS,					// set pnly
 };
 
-static const GUID KSMETHODSETID_BdaChangeSync = { 0xfd0a5af3, 0xb41d, 0x11d2,{ 0x9c, 0x95, 0x0, 0xc0, 0x4f, 0x79, 0x71, 0xe0 } };
+static constexpr GUID KSMETHODSETID_BdaChangeSync = { 0xfd0a5af3, 0xb41d, 0x11d2,{ 0x9c, 0x95, 0x0, 0xc0, 0x4f, 0x79, 0x71, 0xe0 } };
 
 enum KSMETHOD_BDA_CHANGE_SYNC {
 	KSMETHOD_BDA_START_CHANGES = 0,
@@ -71,7 +71,7 @@ enum KSMETHOD_BDA_CHANGE_SYNC {
 	KSMETHOD_BDA_GET_CHANGE_STATE,
 };
 
-static const GUID KSMETHODSETID_BdaDeviceConfiguration = { 0x71985f45, 0x1ca1, 0x11d3,{ 0x9c, 0xc8, 0x0, 0xc0, 0x4f, 0x79, 0x71, 0xe0 } };
+static constexpr GUID KSMETHODSETID_BdaDeviceConfiguration = { 0x71985f45, 0x1ca1, 0x11d3,{ 0x9c, 0xc8, 0x0, 0xc0, 0x4f, 0x79, 0x71, 0xe0 } };
 
 enum KSMETHOD_BDA_DEVICE_CONFIGURATION {
 	KSMETHOD_BDA_CREATE_PIN_FACTORY = 0,
@@ -85,48 +85,48 @@ enum KSMETHOD_BDA_DEVICE_CONFIGURATION {
 //
 
 // ITE 拡張プロパティセット GUID
-static const GUID KSPROPSETID_IteExtension = { 0xc6efe5eb, 0x855a, 0x4f1b,{ 0xb7, 0xaa, 0x87, 0xb5, 0xe1, 0xdc, 0x41, 0x13 } };
+static constexpr GUID KSPROPSETID_IteExtension = { 0xc6efe5eb, 0x855a, 0x4f1b,{ 0xb7, 0xaa, 0x87, 0xb5, 0xe1, 0xdc, 0x41, 0x13 } };
 
 // ITE 拡張プロパティID
 enum KSPROPERTY_ITE_EXTENSION {
-	KSPROPERTY_ITE_EX_BULK_DATA = 0,					// get/set
-	KSPROPERTY_ITE_EX_BULK_DATA_NB,						// get/set
-	KSPROPERTY_ITE_EX_PID_FILTER_ON_OFF,				// set only
-	KSPROPERTY_ITE_EX_BAND_WIDTH,						// get/set
-	KSPROPERTY_ITE_EX_MERCURY_DRIVER_INFO,				// get only
-	KSPROPERTY_ITE_EX_MERCURY_DEVICE_INFO,				// get only
-	KSPROPERTY_ITE_EX_TS_DATA,							// get/set
-	KSPROPERTY_ITE_EX_OVL_CNT,							// get only
-	KSPROPERTY_ITE_EX_FREQ,								// get/set
-	KSPROPERTY_ITE_EX_RESET_USB,						// set only
-	KSPROPERTY_ITE_EX_MERCURY_REG,						// get/set
-	KSPROPERTY_ITE_EX_MERCURY_PVBER,					// get/set
-	KSPROPERTY_ITE_EX_MERCURY_REC_LEN,					// get/set
-	KSPROPERTY_ITE_EX_MERCURY_EEPROM,					// get/set
-	KSPROPERTY_ITE_EX_MERCURY_IR,						// get only	(ERROR_NOT_SUPORTED)
-	KSPROPERTY_ITE_EX_MERCURY_SIGNAL_STRENGTH,			// get only
-	KSPROPERTY_ITE_EX_CHANNEL_MODULATION = 99,			// get only
+	KSPROPERTY_ITE_EX_BULK_DATA = 0,					// get/set		MinData=4
+	KSPROPERTY_ITE_EX_BULK_DATA_NB,						// get/set		MinData=4
+	KSPROPERTY_ITE_EX_PID_FILTER_ON_OFF,				// set only		MinData=4
+	KSPROPERTY_ITE_EX_BAND_WIDTH,						// get/set		MinData=1
+	KSPROPERTY_ITE_EX_MERCURY_DRIVER_INFO,				// get only		MinData=1
+	KSPROPERTY_ITE_EX_MERCURY_DEVICE_INFO,				// get only		MinData=1
+	KSPROPERTY_ITE_EX_TS_DATA,							// get/set		MinData=4
+	KSPROPERTY_ITE_EX_OVL_CNT,							// get only		MinData=1
+	KSPROPERTY_ITE_EX_FREQ,								// get/set		MinData=1
+	KSPROPERTY_ITE_EX_RESET_USB,						// set only		MinData=1
+	KSPROPERTY_ITE_EX_MERCURY_REG,						// get/set		MinData=1
+	KSPROPERTY_ITE_EX_MERCURY_PVBER,					// get/set		MinData=1
+	KSPROPERTY_ITE_EX_MERCURY_REC_LEN,					// get/set		MinData=1
+	KSPROPERTY_ITE_EX_MERCURY_EEPROM,					// get/set		MinData=1
+	KSPROPERTY_ITE_EX_MERCURY_IR,						// get only		MinData=1	(ERROR_NOT_SUPORTED)
+	KSPROPERTY_ITE_EX_MERCURY_SIGNAL_STRENGTH,			// get only		MinData=1
+	KSPROPERTY_ITE_EX_CHANNEL_MODULATION = 99,			// get only		MinData=24
 };
 
 // DVB-S IO コントロール プロパティセット GUID
-static const GUID KSPROPSETID_DvbsIoCtl = { 0xf23fac2d, 0xe1af, 0x48e0,{ 0x8b, 0xbe, 0xa1, 0x40, 0x29, 0xc9, 0x2f, 0x21 } };
+static constexpr GUID KSPROPSETID_DvbsIoCtl = { 0xf23fac2d, 0xe1af, 0x48e0,{ 0x8b, 0xbe, 0xa1, 0x40, 0x29, 0xc9, 0x2f, 0x21 } };
 
 // DVB-S IO コントロール プロパティID
 enum KSPROPERTY_DVBS_IO_CTL {
-	KSPROPERTY_DVBS_IO_LNB_POWER = 0,					// get/set
-	KSPROPERTY_DVBS_IO_DiseqcLoad,						// set only
+	KSPROPERTY_DVBS_IO_LNB_POWER = 0,					// get/set		MinData=1
+	KSPROPERTY_DVBS_IO_DiseqcLoad,						// set only		MinData=1
 };
 
 // 拡張 IO コントロール プロパティセット GUID
-static const GUID KSPROPSETID_ExtIoCtl = { 0xf23fac2d, 0xe1af, 0x48e0,{ 0x8b, 0xbe, 0xa1, 0x40, 0x29, 0xc9, 0x2f, 0x11 } };
+static constexpr GUID KSPROPSETID_ExtIoCtl = { 0xf23fac2d, 0xe1af, 0x48e0,{ 0x8b, 0xbe, 0xa1, 0x40, 0x29, 0xc9, 0x2f, 0x11 } };
 
 // 拡張 IO コントロール プロパティ ID
 enum KSPROPERTY_EXT_IO_CTL {
-	KSPROPERTY_EXT_IO_DRV_DATA = 0,						// get/set
-	KSPROPERTY_EXT_IO_DEV_IO_CTL,						// get/set
-	KSPROPERTY_EXT_IO_UNUSED50 = 50,					// not used
-	KSPROPERTY_EXT_IO_UNUSED51 = 51,					// not used
-	KSPROPERTY_EXT_IO_ISDBT_IO_CTL = 200,				// set only
+	KSPROPERTY_EXT_IO_DRV_DATA = 0,						// get/set		MinData=1
+	KSPROPERTY_EXT_IO_DEV_IO_CTL,						// get/set		MinData=1
+	KSPROPERTY_EXT_IO_UNUSED50 = 50,					// not used		MinData=1
+	KSPROPERTY_EXT_IO_UNUSED51 = 51,					// not used		MinData=1
+	KSPROPERTY_EXT_IO_ISDBT_IO_CTL = 200,				// set only		MinData=1
 };
 
 // 拡張 IO コントロール KSPROPERTY_EXT_IO_DRV_DATA 用ファンクションコード
@@ -212,11 +212,12 @@ struct DevIoCtlDataSet {
 #pragma pack()
 
 // プライベート IO コントロール プロパティセット GUID
-static const GUID KSPROPSETID_PrivateIoCtl = { 0xede22531, 0x92e8, 0x4957,{ 0x9d, 0x5, 0x6f, 0x30, 0x33, 0x73, 0xe8, 0x37 } };
+static constexpr GUID KSPROPSETID_PrivateIoCtl = { 0xede22531, 0x92e8, 0x4957,{ 0x9d, 0x5, 0x6f, 0x30, 0x33, 0x73, 0xe8, 0x37 } };
 
 // プライベート IO コントロール プロパティ ID
 enum KSPROPERTY_PRIVATE_IO_CTL {
-	KSPROPERTY_PRIVATE_IO_DIGIBEST_TUNER = 0,			// set only
+	KSPROPERTY_PRIVATE_IO_DIGIBEST_TUNER = 0,			// set only		MinData=1
+	KSPROPERTY_PRIVATE_IO_DIGIBEST_TUNER_PARAMETER,		// get/set		MinData=1
 };
 
 // プライベート IO コントロール KSPROPERTY_PRIVATE_IO_DIGIBEST_TUNER 用ファンクションコード
@@ -615,7 +616,7 @@ static inline HRESULT it35_Unk101(IKsPropertySet *pIKsPropertySet)
 // 拡張 IO コントロール KSPROPERTY_EXT_IO_ISDBT_IO_CTL 用関数
 //
 // TSID をセット
-static inline HRESULT it35_PutISDBIoCtl(IKsPropertySet *pIKsPropertySet, WORD dwData)
+static inline HRESULT it35_PutISDBIoCtl(IKsPropertySet *pIKsPropertySet, DWORD dwData)
 {
 	return pIKsPropertySet->Set(KSPROPSETID_ExtIoCtl, KSPROPERTY_EXT_IO_ISDBT_IO_CTL, NULL, 0, &dwData, sizeof(dwData));
 }

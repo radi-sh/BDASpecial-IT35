@@ -31,4 +31,10 @@
 ・DTV02-5T-P用のiniファイルを追加
 ・DTV02-1T1S-Uに対応
 ・古いBDA Driver以外ではSignalLevelの値が100超に張り付いてしまう問題を修正
-※ BonDriver_BDA改-20180818より前のバージョンでは動作しませんのでご注意ください。
+
+【2019-02-02】
+・BonDriver_BDA改-20190202 に対応
+・WinSCard.dll が Spinelで落ちてしまう不具合修正
+・PX-MLT5PEに対応
+※ BonDriver_BDA改-20190202より前のバージョンでは動作しませんのでご注意ください。
+
