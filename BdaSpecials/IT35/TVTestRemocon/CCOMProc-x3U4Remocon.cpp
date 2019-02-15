@@ -19,8 +19,6 @@
 #include "WaitWithMsg.h"
 #include "IT35propset.h"
 
-#pragma comment(lib, "Strmiids.lib")
-
 CCOMProc::CCOMProc(void)
 	: hThread(NULL),
 	hThreadInitComp(NULL),
