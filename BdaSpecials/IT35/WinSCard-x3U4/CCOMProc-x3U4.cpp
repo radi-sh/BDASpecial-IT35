@@ -19,8 +19,6 @@
 #include "DSFilterEnum.h"
 #include "WaitWithMsg.h"
 
-#pragma comment(lib, "Strmiids.lib")
-
 CCOMProc::CCOMProc(void)
 	: hThread(NULL),
 	hThreadInitComp(NULL),
