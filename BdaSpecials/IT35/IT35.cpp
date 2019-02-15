@@ -7,11 +7,8 @@
 
 #include <dshow.h>
 
-#include "CIniFileAccess.h"
 #include "IT35propset.h"
 #include "CIniFileAccess.h"
-
-#pragma comment(lib, "Strmiids.lib" )
 
 FILE *g_fpLog = NULL;
 
