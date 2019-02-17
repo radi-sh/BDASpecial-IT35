@@ -35,6 +35,11 @@ private:
 	HMODULE m_hMySelf;
 	CComPtr<IBaseFilter> m_pTunerDevice;
 	CComQIPtr<IKsPropertySet> m_pIKsPropertySet;
+	CComPtr<IBDA_FrequencyFilter> m_pIBDA_FrequencyFilter;				// IBDA_FrequencyFilter (Input Pin, Node 0)
+	CComPtr<IBDA_SignalStatistics> m_pIBDA_SignalStatistics;			// IBDA_SignalStatistics(Input Pin, Node 0)
+	CComPtr<IBDA_LNBInfo> m_pIBDA_LNBInfo;								// IBDA_LNBInfo (Input Pin, Node 0)
+	CComPtr<IBDA_DigitalDemodulator> m_pIBDA_DigitalDemodulator;		// IBDA_DigitalDemodulator (Output Pin, Node 1)
+	CComPtr<IBDA_DeviceControl> m_pIBDA_DeviceControl;					// IBDA_DeviceControl (Tuner)
 	CRITICAL_SECTION m_CriticalSection;
 
 	// 固有の Property set を使用してTSIDの書込みを行うモード
@@ -42,6 +47,7 @@ private:
 		ePrivateSetTSIDNone = 0,			// 行わない
 		ePrivateSetTSIDPreTR,				// PreTuneRequestで行う
 		ePrivateSetTSIDPostTR,				// PostTuneRequestで行う
+		ePrivateSetTSIDSpecial = 100,		// 全てのチューニング操作をLockChannelで行う
 	};
 
 	BOOL m_bRewriteIFFreq;					// IF周波数で put_CarrierFrequency() を行う
