@@ -54,4 +54,6 @@ private:
 	enumPrivateSetTSID m_nPrivateSetTSID;	// 固有の Property set を使用してTSIDの書込みを行うモード
 	BOOL m_bLNBPowerON;						// LNB電源の供給をONする
 	BOOL m_bDualModeISDB;					// Dual Mode ISDB Tuner
+	unsigned int m_nSpecialLockWait;		// BDASpecial固有のLockChannelを使用する場合のLock完了待ち時間
+	unsigned int m_nSpecialLockInterval;	// Lock完了待ち時にTSIDの再セットを行うインターバル時間
 };

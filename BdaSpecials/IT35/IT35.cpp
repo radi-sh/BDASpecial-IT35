@@ -16,6 +16,7 @@
 #include "IT35propset.h"
 #include "CIniFileAccess.h"
 #include "DSFilterEnum.h"
+#include "WaitWithMsg.h"
 
 FILE *g_fpLog = NULL;
 
@@ -76,7 +77,9 @@ CIT35Specials::CIT35Specials(HMODULE hMySelf, CComPtr<IBaseFilter> pTunerDevice)
 	  m_bRewriteIFFreq(FALSE),
 	  m_nPrivateSetTSID(enumPrivateSetTSID::ePrivateSetTSIDNone),
 	  m_bLNBPowerON(FALSE),
-	  m_bDualModeISDB(FALSE)
+	  m_bDualModeISDB(FALSE),
+	  m_nSpecialLockWait(2000),
+	  m_nSpecialLockInterval(100)
 {
 	::InitializeCriticalSection(&m_CriticalSection);
 
@@ -362,21 +365,40 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam *pTuningParam)
 			}
 			OutputDebug(L"  Succeeded to IBDA_DeviceControl::CommitChanges() function.\n");
 
-			// TSIDをSetする
-			hr = it35_PutISDBIoCtl(m_pIKsPropertySet, pTuningParam->TSID == 0 ? (DWORD)-1 : (DWORD)pTuningParam->TSID);
+			long tsid = pTuningParam->TSID == 0 ? -1L : pTuningParam->TSID;
+			static constexpr int CONFIRM_RETRY_TIME = 50;
+			unsigned int nWaitRemain = m_nSpecialLockWait;
+			unsigned int nInterval = 0;
+			while(1) {
+				if (!nInterval) {
+					// TSIDをセット
+					hr = it35_PutISDBIoCtl(m_pIKsPropertySet, (DWORD)tsid);
+					nInterval = m_nSpecialLockInterval;
+				}
 
-			BOOLEAN locked = 0;
-			hr = m_pIBDA_SignalStatistics->get_SignalLocked(&locked);
-			OutputDebug(L"  SignalLocked=%d.\n", locked);
-
+				// 信号lock状態を取得
+				BOOLEAN locked = 0;
+				hr = m_pIBDA_SignalStatistics->get_SignalLocked(&locked);
+				if (locked) {
+					OutputDebug(L"  Lock success.\n");
+					success = TRUE;
+					break;
+				}
+				unsigned int nSleepTime = min(nWaitRemain, CONFIRM_RETRY_TIME);
+				if (!nSleepTime) {
+					OutputDebug(L"  Timed out.\n");
+					break;
+				}
+				OutputDebug(L"    Waiting lock status remaining %d msec.\n", nWaitRemain);
+				SleepWithMessageLoop((DWORD)nSleepTime);
+				nWaitRemain -= nSleepTime;
+				nInterval -= min(nInterval, nSleepTime);
+			}
 			OutputDebug(L"LockChannel: Complete.\n");
-			if (locked)
-				success = TRUE;
 
 		} while (0);
 
-//		return success ? S_OK : E_FAIL;
-		return S_OK;
+		return success ? S_OK : E_FAIL;
 	}
 
 	return E_NOINTERFACE;
@@ -412,6 +434,12 @@ const HRESULT CIT35Specials::ReadIniFile(const WCHAR *szIniFilePath)
 
 	// Dual Mode ISDB Tuner
 	m_bDualModeISDB = IniFileAccess.ReadKeyB(L"DualModeISDB", FALSE);
+
+	// BDASpecial固有のLockChannelを使用する場合のLock完了待ち時間
+	m_nSpecialLockWait = IniFileAccess.ReadKeyI(L"SpecialLockWait", 2000);
+
+	// Lock完了待ち時にTSIDの再セットを行うインターバル時間
+	m_nSpecialLockInterval = IniFileAccess.ReadKeyI(L"SpecialLockInterval", 100);
 
 	return S_OK;
 }
