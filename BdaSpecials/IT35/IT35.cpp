@@ -465,7 +465,7 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam *pTuningParam)
 				hr = m_pIBDA_SignalStatistics->get_SignalPresent(&sp);
 				hr = m_pIBDA_SignalStatistics->get_SignalLocked(&sl);
 				OutputDebug(L"    Strength=%d, Quality=%d, Present=%d, Locked=%d\n", ss, sq, sp, sl);
-				if (sl && sq > 20) {
+				if (sl && sq >= 20) {
 					OutputDebug(L"  Lock success.\n");
 					success = TRUE;
 					break;
