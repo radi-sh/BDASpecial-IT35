@@ -530,7 +530,7 @@ const HRESULT CIT35Specials::ReadIniFile(const WCHAR *szIniFilePath)
 	// BDASpecial固有のLockChannelを使用する場合のLock完了確認を開始する前のウェイト時間
 	m_nSpecialLockFirstWait = IniFileAccess.ReadKeyI(L"SpecialLockFirstWait", 0);
 
-	// BDASpecial固有のLockChannelを使用する場合のLock完了待ち時にISDB-SのTSIDの再セットを行うインターバル時間
+	// BDASpecial固有のLockChannelを使用する場合のLock完了待ち時にTSID / PID mapの再セットを行うインターバル時間
 	m_nSpecialLockSetTSIDInterval = IniFileAccess.ReadKeyI(L"SpecialLockSetTSIDInterval", 100);
 
 	// BDASpecial固有のLockChannelを使用する場合のLockリトライ回数
