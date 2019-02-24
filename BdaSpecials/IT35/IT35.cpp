@@ -525,7 +525,7 @@ const HRESULT CIT35Specials::ReadIniFile(const WCHAR *szIniFilePath)
 	m_bUseSpecialSignalState = IniFileAccess.ReadKeyB(L"UseSpecialSignalState", m_nPrivateSetTSID == enumPrivateSetTSID::ePrivateSetTSIDSpecial ? TRUE : FALSE);
 
 	// BDASpecial固有のLockChannelを使用する場合のLock完了確認時間
-	m_nSpecialLockConfirmTime = IniFileAccess.ReadKeyI(L"SpecialLockConfirmTime", /* 2000 */ 5000);
+	m_nSpecialLockConfirmTime = IniFileAccess.ReadKeyI(L"SpecialLockConfirmTime", 2000);
 
 	// BDASpecial固有のLockChannelを使用する場合のLock完了確認を開始する前のウェイト時間
 	m_nSpecialLockFirstWait = IniFileAccess.ReadKeyI(L"SpecialLockFirstWait", 0);
@@ -534,7 +534,7 @@ const HRESULT CIT35Specials::ReadIniFile(const WCHAR *szIniFilePath)
 	m_nSpecialLockSetTSIDInterval = IniFileAccess.ReadKeyI(L"SpecialLockSetTSIDInterval", 100);
 
 	// BDASpecial固有のLockChannelを使用する場合のLockリトライ回数
-	m_nSpecialLockRetry = IniFileAccess.ReadKeyI(L"SpecialLockRetry", /* 0 */ 4);
+	m_nSpecialLockRetry = IniFileAccess.ReadKeyI(L"SpecialLockRetry", /* 0 */ 3);
 
 	// BDASpecial固有のLockChannelを使用する場合でISDB-Sの時にput_Bandwidthする値
 	m_nISDBSBandWidth = IniFileAccess.ReadKeyI(L"ISDBSBandWidth", /* -1 */ 9);
