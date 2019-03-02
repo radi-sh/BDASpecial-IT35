@@ -78,12 +78,8 @@ CIT35Specials::CIT35Specials(HMODULE hMySelf, CComPtr<IBaseFilter> pTunerDevice)
 	  m_nPrivateSetTSID(enumPrivateSetTSID::ePrivateSetTSIDNone),
 	  m_bLNBPowerON(FALSE),
 	  m_bDualModeISDB(FALSE),
-	m_bUseSpecialSignalState(FALSE),
-	  m_nSpecialLockConfirmTime(2000),
-	  m_nSpecialLockFirstWait(0),
-	  m_nSpecialLockSetTSIDInterval(100),
-	  m_nSpecialLockRetry(0),
-	  m_nISDBSBandWidth(-1)
+	  m_nSpecialLockWait(2000),
+	  m_nSpecialLockInterval(100)
 {
 	::InitializeCriticalSection(&m_CriticalSection);
 
@@ -205,38 +201,6 @@ const HRESULT CIT35Specials::FinalizeHook(void)
 
 const HRESULT CIT35Specials::GetSignalState(int *pnStrength, int *pnQuality, int *pnLock)
 {
-	if (m_bUseSpecialSignalState) {
-		if (m_pTunerDevice == NULL) {
-			return E_POINTER;
-		}
-
-		if (!m_pIBDA_SignalStatistics) {
-			return E_FAIL;
-		}
-
-		HRESULT hr;
-		LONG signalStrength = 0;	// デシベル単位の信号の強度
-		hr = m_pIBDA_SignalStatistics->get_SignalStrength(&signalStrength);
-		LONG signalQuality = 0;		// 信号の品質
-		hr = m_pIBDA_SignalStatistics->get_SignalQuality(&signalQuality);
-		BOOLEAN signalPresent = 0;	// 信号が存在するかどうか
-		hr = m_pIBDA_SignalStatistics->get_SignalPresent(&signalPresent);
-		/*
-		BOOLEAN signalLocked = 0;	// 信号がロックされているかどうか
-		hr = m_pIBDA_SignalStatistics->get_SignalLocked(&signalLocked);
-		*/
-		if (pnLock) {
-			*pnLock = (int)!!signalPresent;
-		}
-		if (pnStrength) {
-			*pnStrength = signalStrength == -65535L ? -1 : (int)signalStrength;
-		}
-		if (pnQuality) {
-			*pnQuality = (int)signalQuality;
-		}
-		return S_OK;
-	}
-
 	return E_NOINTERFACE;
 }
 
@@ -267,52 +231,40 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam *pTuningParam)
 
 		OutputDebug(L"LockChannel: Start.\n");
 
-		BOOL isISDBS = pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_S_TMCC;
 		BOOL success = FALSE;
-		BOOL failure = FALSE;
-		unsigned int retryRemain = m_nSpecialLockRetry;
 		do {
-			if (retryRemain == m_nSpecialLockRetry) {
-				// Dual Mode ISDB Tunerの場合はデモジュレーターの復調Modeを設定
-				if (m_bDualModeISDB) {
-					switch (pTuningParam->Modulation.Modulation) {
-					case BDA_MOD_ISDB_T_TMCC:
-						hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, PRIVATE_IO_CTL_FUNC_DEMOD_OFDM);
-						break;
-					case BDA_MOD_ISDB_S_TMCC:
-						hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, PRIVATE_IO_CTL_FUNC_DEMOD_PSK);
-						break;
-					}
-				}
-
-				ULONG State;
-				if (FAILED(hr = m_pIBDA_DeviceControl->GetChangeState(&State))) {
-					OutputDebug(L"  Fail to IBDA_DeviceControl::GetChangeState() function. ret=0x%08lx\n", hr);
-					failure = true;
+			// Dual Mode ISDB Tunerの場合はデモジュレーターの復調Modeを設定
+			if (m_bDualModeISDB) {
+				switch (pTuningParam->Modulation.Modulation) {
+				case BDA_MOD_ISDB_T_TMCC:
+					hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, PRIVATE_IO_CTL_FUNC_DEMOD_OFDM);
+					break;
+				case BDA_MOD_ISDB_S_TMCC:
+					hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, PRIVATE_IO_CTL_FUNC_DEMOD_PSK);
 					break;
 				}
-				// ペンディング状態のトランザクションがあるか確認
-				if (State == BDA_CHANGES_PENDING) {
-					OutputDebug(L"  Some changes are pending. Trying CommitChanges.\n");
-					// トランザクションのコミット
-					if (FAILED(hr = m_pIBDA_DeviceControl->CommitChanges())) {
-						OutputDebug(L"    Fail to CommitChanges. ret=0x%08lx\n", hr);
-					}
-					else {
-						OutputDebug(L"    Succeeded to CommitChanges.\n");
-					}
-				}
 			}
-			else if (m_pIBDA_FrequencyFilter) {
-				hr = m_pIBDA_DeviceControl->StartChanges();
-				hr = m_pIBDA_FrequencyFilter->put_Frequency((ULONG)-1L);					/* おまじないしてみる */
-				hr = m_pIBDA_DeviceControl->CommitChanges();
+
+			ULONG State;
+			if (FAILED(hr = m_pIBDA_DeviceControl->GetChangeState(&State))) {
+				OutputDebug(L"  Fail to IBDA_DeviceControl::GetChangeState() function. ret=0x%08lx\n", hr);
+				break;
+			}
+			// ペンディング状態のトランザクションがあるか確認
+			if (State == BDA_CHANGES_PENDING) {
+				OutputDebug(L"  Some changes are pending. Trying CommitChanges.\n");
+				// トランザクションのコミット
+				if (FAILED(hr = m_pIBDA_DeviceControl->CommitChanges())) {
+					OutputDebug(L"    Fail to CommitChanges. ret=0x%08lx\n", hr);
+				}
+				else {
+					OutputDebug(L"    Succeeded to CommitChanges.\n");
+				}
 			}
 
 			// トランザクション開始通知
 			if (FAILED(hr = m_pIBDA_DeviceControl->StartChanges())) {
 				OutputDebug(L"  Fail to IBDA_DeviceControl::StartChanges() function. ret=0x%08lx\n", hr);
-				failure = true;
 				break;
 			}
 
@@ -372,8 +324,8 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam *pTuningParam)
 				// 信号の偏波を設定
 				m_pIBDA_FrequencyFilter->put_Polarity(pTuningParam->Polarisation);
 
-				// 周波数の帯域幅 (MHz)を設定												/* どういうわけかよくわからないけどJacky BonDriverはBS/CS110共に9をセットしているような気がする */
-				m_pIBDA_FrequencyFilter->put_Bandwidth(isISDBS ? (ULONG)m_nISDBSBandWidth : (ULONG)pTuningParam->Modulation.BandWidth);
+				// 周波数の帯域幅 (MHz)を設定
+				m_pIBDA_FrequencyFilter->put_Bandwidth((ULONG)pTuningParam->Modulation.BandWidth);
 
 				// RF 信号の周波数を設定
 				long freq = pTuningParam->Frequency;
@@ -409,80 +361,42 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam *pTuningParam)
 				// 失敗したら全ての変更を取り消す
 				hr = m_pIBDA_DeviceControl->StartChanges();
 				hr = m_pIBDA_DeviceControl->CommitChanges();
-				failure = true;
 				break;
 			}
 			OutputDebug(L"  Succeeded to IBDA_DeviceControl::CommitChanges() function.\n");
 
-			if (m_nSpecialLockFirstWait) {
-				OutputDebug(L"    Waiting %d msec for first waiting.\n", m_nSpecialLockFirstWait);
-				SleepWithMessageLoop((DWORD)m_nSpecialLockFirstWait);
-			}
-
 			long tsid = pTuningParam->TSID == 0 ? -1L : pTuningParam->TSID;
 			static constexpr int CONFIRM_RETRY_TIME = 50;
-			unsigned int confirmRemain = m_nSpecialLockConfirmTime;
-			unsigned int tsidInterval = 0;
-			while (1) {
-				if (!tsidInterval) {
-					if (isISDBS) {
-						// TSIDをセット
-						if (SUCCEEDED(hr = it35_PutISDBIoCtl(m_pIKsPropertySet, (DWORD)tsid))) {
-							OutputDebug(L"    Succeeded to set TSID to demodulator.\n");
-						}
-						else {
-							OutputDebug(L"    Failed to set TSID to demodulator. hr=0x%08lx\n", hr);
-						}
-					}
-
-					// PID off
-					if (SUCCEEDED(hr = it35_PutPidFilterOnOff(m_pIKsPropertySet, FALSE))) {
-						OutputDebug(L"    Succeeded to set PID on/off.\n");
-					}
-					else {
-						OutputDebug(L"    Failed to set PID on/off. hr=0x%08lx\n", hr);
-					}
-
-					// PID Map
-					BDA_PID_MAP pidMap = { MEDIA_SAMPLE_CONTENT::MEDIA_TRANSPORT_PACKET, 1, { 0x1fff } };
-					if (SUCCEEDED(hr = m_pIKsPropertySet->Set(KSPROPSETID_BdaPIDFilter, KSPROPERTY_BDA_PIDFILTER_MAP_PIDS, &pidMap, sizeof(pidMap), &pidMap, sizeof(pidMap)))) {
-						OutputDebug(L"    Succeeded to set PID map.\n");
-					}
-					else {
-						OutputDebug(L"    Failed to set PID map. hr=0x%08lx\n", hr);
-					}
-
-					tsidInterval = max(m_nSpecialLockSetTSIDInterval, CONFIRM_RETRY_TIME);
+			unsigned int nWaitRemain = m_nSpecialLockWait;
+			unsigned int nInterval = 0;
+			while(1) {
+				if (!nInterval) {
+					// TSIDをセット
+					hr = it35_PutISDBIoCtl(m_pIKsPropertySet, (DWORD)tsid);
+					nInterval = m_nSpecialLockInterval;
 				}
 
-				// 信号lock状態を取得														/* logで挙動を確認したいのでいろいろ入れてみた */
-				LONG ss = 0;
-				LONG sq = 0;
-				BOOLEAN sp = 0;
-				BOOLEAN sl = 0;
-				hr = m_pIBDA_SignalStatistics->get_SignalStrength(&ss);
-				hr = m_pIBDA_SignalStatistics->get_SignalQuality(&sq);
-				hr = m_pIBDA_SignalStatistics->get_SignalPresent(&sp);
-				hr = m_pIBDA_SignalStatistics->get_SignalLocked(&sl);
-				OutputDebug(L"    Strength=%d, Quality=%d, Present=%d, Locked=%d\n", ss, sq, sp, sl);
-				if (sl && sq > 20) {
+				// 信号lock状態を取得
+				BOOLEAN locked = 0;
+				hr = m_pIBDA_SignalStatistics->get_SignalLocked(&locked);
+				if (locked) {
 					OutputDebug(L"  Lock success.\n");
 					success = TRUE;
 					break;
 				}
-				unsigned int sleepTime = min(tsidInterval, min(confirmRemain, CONFIRM_RETRY_TIME));
-				if (!sleepTime) {
+				unsigned int nSleepTime = min(nWaitRemain, CONFIRM_RETRY_TIME);
+				if (!nSleepTime) {
 					OutputDebug(L"  Timed out.\n");
 					break;
 				}
-				OutputDebug(L"    Waiting lock status remaining %d msec.\n", confirmRemain);
-				SleepWithMessageLoop((DWORD)sleepTime);
-				confirmRemain -= sleepTime;
-				tsidInterval -= sleepTime;
+				OutputDebug(L"    Waiting lock status remaining %d msec.\n", nWaitRemain);
+				SleepWithMessageLoop((DWORD)nSleepTime);
+				nWaitRemain -= nSleepTime;
+				nInterval -= min(nInterval, nSleepTime);
 			}
+			OutputDebug(L"LockChannel: Complete.\n");
 
-		} while (!success && !failure && retryRemain--);
-		OutputDebug(L"LockChannel: Complete.\n");
+		} while (0);
 
 		return success ? S_OK : E_FAIL;
 	}
@@ -521,23 +435,11 @@ const HRESULT CIT35Specials::ReadIniFile(const WCHAR *szIniFilePath)
 	// Dual Mode ISDB Tuner
 	m_bDualModeISDB = IniFileAccess.ReadKeyB(L"DualModeISDB", FALSE);
 
-	// BDASpecial固有のGetSignalStateを使用する
-	m_bUseSpecialSignalState = IniFileAccess.ReadKeyB(L"UseSpecialSignalState", m_nPrivateSetTSID == enumPrivateSetTSID::ePrivateSetTSIDSpecial ? TRUE : FALSE);
+	// BDASpecial固有のLockChannelを使用する場合のLock完了待ち時間
+	m_nSpecialLockWait = IniFileAccess.ReadKeyI(L"SpecialLockWait", 2000);
 
-	// BDASpecial固有のLockChannelを使用する場合のLock完了確認時間
-	m_nSpecialLockConfirmTime = IniFileAccess.ReadKeyI(L"SpecialLockConfirmTime", /* 2000 */ 5000);
-
-	// BDASpecial固有のLockChannelを使用する場合のLock完了確認を開始する前のウェイト時間
-	m_nSpecialLockFirstWait = IniFileAccess.ReadKeyI(L"SpecialLockFirstWait", 0);
-
-	// BDASpecial固有のLockChannelを使用する場合のLock完了待ち時にISDB-SのTSIDの再セットを行うインターバル時間
-	m_nSpecialLockSetTSIDInterval = IniFileAccess.ReadKeyI(L"SpecialLockSetTSIDInterval", 100);
-
-	// BDASpecial固有のLockChannelを使用する場合のLockリトライ回数
-	m_nSpecialLockRetry = IniFileAccess.ReadKeyI(L"SpecialLockRetry", /* 0 */ 4);
-
-	// BDASpecial固有のLockChannelを使用する場合でISDB-Sの時にput_Bandwidthする値
-	m_nISDBSBandWidth = IniFileAccess.ReadKeyI(L"ISDBSBandWidth", /* -1 */ 9);
+	// Lock完了待ち時にTSIDの再セットを行うインターバル時間
+	m_nSpecialLockInterval = IniFileAccess.ReadKeyI(L"SpecialLockInterval", 100);
 
 	return S_OK;
 }

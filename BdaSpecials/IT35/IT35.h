@@ -44,20 +44,16 @@ private:
 
 	// 固有の Property set を使用してTSIDの書込みを行うモード
 	enum enumPrivateSetTSID {
-		ePrivateSetTSIDNone = 0,				// 行わない
-		ePrivateSetTSIDPreTR,					// PreTuneRequestで行う
-		ePrivateSetTSIDPostTR,					// PostTuneRequestで行う
-		ePrivateSetTSIDSpecial = 100,			// 全てのチューニング操作をLockChannelで行う
+		ePrivateSetTSIDNone = 0,			// 行わない
+		ePrivateSetTSIDPreTR,				// PreTuneRequestで行う
+		ePrivateSetTSIDPostTR,				// PostTuneRequestで行う
+		ePrivateSetTSIDSpecial = 100,		// 全てのチューニング操作をLockChannelで行う
 	};
 
-	BOOL m_bRewriteIFFreq;						// IF周波数で put_CarrierFrequency() を行う
-	enumPrivateSetTSID m_nPrivateSetTSID;		// 固有の Property set を使用してTSIDの書込みを行うモード
-	BOOL m_bLNBPowerON;							// LNB電源の供給をONする
-	BOOL m_bDualModeISDB;						// Dual Mode ISDB Tuner
-	BOOL m_bUseSpecialSignalState;				// BDASpecial固有のGetSignalStateを使用する
-	unsigned int m_nSpecialLockConfirmTime;		// BDASpecial固有のLockChannelを使用する場合のLock完了確認時間
-	unsigned int m_nSpecialLockFirstWait;		// BDASpecial固有のLockChannelを使用する場合のLock完了確認を開始する前のウェイト時間
-	unsigned int m_nSpecialLockSetTSIDInterval;	// BDASpecial固有のLockChannelを使用する場合のLock完了待ち時にTSID / PID mapの再セットを行うインターバル時間
-	unsigned int m_nSpecialLockRetry;			// BDASpecial固有のLockChannelを使用する場合のLockリトライ回数
-	long m_nISDBSBandWidth;						// BDASpecial固有のLockChannelを使用する場合でISDB-Sの時にput_Bandwidthする値
+	BOOL m_bRewriteIFFreq;					// IF周波数で put_CarrierFrequency() を行う
+	enumPrivateSetTSID m_nPrivateSetTSID;	// 固有の Property set を使用してTSIDの書込みを行うモード
+	BOOL m_bLNBPowerON;						// LNB電源の供給をONする
+	BOOL m_bDualModeISDB;					// Dual Mode ISDB Tuner
+	unsigned int m_nSpecialLockWait;		// BDASpecial固有のLockChannelを使用する場合のLock完了待ち時間
+	unsigned int m_nSpecialLockInterval;	// Lock完了待ち時にTSIDの再セットを行うインターバル時間
 };

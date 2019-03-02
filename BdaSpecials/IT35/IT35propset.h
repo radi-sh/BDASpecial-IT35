@@ -62,6 +62,14 @@ enum KSPROPERTY_BDA_DIGITAL_DEMODULATOR {
 };
 
 // KSCATEGORY_BDA_NETWORK_TUNER Tuner filter, id:0
+static constexpr GUID KSPROPSETID_BdaPIDFilter = { 0xd0a67d65, 0x8df, 0x4fec,{ 0x85, 0x33, 0xe5, 0xb5, 0x50, 0x41, 0xb, 0x85 } };
+
+enum KSPROPERTY_BDA_PIDFILTER {
+	KSPROPERTY_BDA_PIDFILTER_MAP_PIDS = 0,				// set only			MinProperty=32		MinData=12
+	KSPROPERTY_BDA_PIDFILTER_UNMAP_PIDS,				// set only			MinProperty=32		MinData=8
+	KSPROPERTY_BDA_PIDFILTER_LIST_PIDS,					// set pnly			MinProperty=32		MinData=0
+};
+
 static constexpr GUID KSMETHODSETID_BdaChangeSync = { 0xfd0a5af3, 0xb41d, 0x11d2,{ 0x9c, 0x95, 0x0, 0xc0, 0x4f, 0x79, 0x71, 0xe0 } };
 
 enum KSMETHOD_BDA_CHANGE_SYNC {
@@ -80,15 +88,6 @@ enum KSMETHOD_BDA_DEVICE_CONFIGURATION {
 	KSMETHOD_BDA_CREATE_TOPOLOGY,						// modify			MinMethod=32		MinData=0
 };
 */
-
-// KSCATEGORY_BDA_NETWORK_TUNER Tuner filter, id:0
-static constexpr GUID KSPROPSETID_BdaPIDFilter = { 0xd0a67d65, 0x8df, 0x4fec,{ 0x85, 0x33, 0xe5, 0xb5, 0x50, 0x41, 0xb, 0x85 } };
-
-enum KSPROPERTY_BDA_PIDFILTER {
-	KSPROPERTY_BDA_PIDFILTER_MAP_PIDS = 0,				// set only			MinProperty=32		MinData=12
-	KSPROPERTY_BDA_PIDFILTER_UNMAP_PIDS,				// set only			MinProperty=32		MinData=8
-	KSPROPERTY_BDA_PIDFILTER_LIST_PIDS,					// set pnly			MinProperty=32		MinData=0
-};
 
 //
 // IT9135 BDA driver 固有の Property set
@@ -247,12 +246,6 @@ enum PRIVATE_IO_CTL_FUNC_CODE {
 //
 // ITE 拡張プロパティセット用関数
 //
-// PID Filter ON/OFF設定
-static inline HRESULT it35_PutPidFilterOnOff(IKsPropertySet *pIKsPropertySet, DWORD dwData)
-{
-	return pIKsPropertySet->Set(KSPROPSETID_IteExtension, KSPROPERTY_ITE_EX_PID_FILTER_ON_OFF, NULL, 0, &dwData, sizeof(dwData));
-}
-
 // チューニング帯域幅取得
 static inline HRESULT it35_GetBandWidth(IKsPropertySet *pIKsPropertySet, WORD *pwData)
 {
