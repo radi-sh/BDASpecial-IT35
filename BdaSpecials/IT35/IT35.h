@@ -44,14 +44,16 @@ private:
 
 	// 固有の Property set を使用してTSIDの書込みを行うモード
 	enum enumPrivateSetTSID {
-		ePrivateSetTSIDNone = 0,			// 行わない
-		ePrivateSetTSIDPreTR,				// PreTuneRequestで行う
-		ePrivateSetTSIDPostTR,				// PostTuneRequestで行う
-		ePrivateSetTSIDSpecial = 100,		// 全てのチューニング操作をLockChannelで行う
+		ePrivateSetTSIDNone = 0,				// 行わない
+		ePrivateSetTSIDPreTR,					// PreTuneRequestで行う
+		ePrivateSetTSIDPostTR,					// PostTuneRequestで行う
+		ePrivateSetTSIDSpecial = 100,			// 全てのチューニング操作をLockChannelで行う
 	};
 
-	BOOL m_bRewriteIFFreq;					// IF周波数で put_CarrierFrequency() を行う
-	enumPrivateSetTSID m_nPrivateSetTSID;	// 固有の Property set を使用してTSIDの書込みを行うモード
-	BOOL m_bLNBPowerON;						// LNB電源の供給をONする
-	BOOL m_bDualModeISDB;					// Dual Mode ISDB Tuner
+	BOOL m_bRewriteIFFreq;						// IF周波数で put_CarrierFrequency() を行う
+	enumPrivateSetTSID m_nPrivateSetTSID;		// 固有の Property set を使用してTSIDの書込みを行うモード
+	BOOL m_bLNBPowerON;							// LNB電源の供給をONする
+	BOOL m_bDualModeISDB;						// Dual Mode ISDB Tuner
+	unsigned int m_nSpecialLockConfirmTime;		// BDASpecial固有のLockChannelを使用する場合のLock完了確認時間
+	unsigned int m_nSpecialLockSetTSIDInterval;	// BDASpecial固有のLockChannelを使用する場合のLock完了待ち時にTSID / PID mapの再セットを行うインターバル時間
 };

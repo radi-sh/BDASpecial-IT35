@@ -13,9 +13,19 @@
 
 #include <dshow.h>
 
+// KSPROPSETID_BdaPIDFilter
+#include <ks.h>
+#pragma warning (push)
+#pragma warning (disable: 4091)
+#include <ksmedia.h>
+#pragma warning (pop)
+#include <bdatypes.h>
+#include <bdamedia.h>
+
 #include "IT35propset.h"
 #include "CIniFileAccess.h"
 #include "DSFilterEnum.h"
+#include "WaitWithMsg.h"
 
 FILE *g_fpLog = NULL;
 
@@ -76,7 +86,9 @@ CIT35Specials::CIT35Specials(HMODULE hMySelf, CComPtr<IBaseFilter> pTunerDevice)
 	  m_bRewriteIFFreq(FALSE),
 	  m_nPrivateSetTSID(enumPrivateSetTSID::ePrivateSetTSIDNone),
 	  m_bLNBPowerON(FALSE),
-	  m_bDualModeISDB(FALSE)
+	  m_bDualModeISDB(FALSE),
+	  m_nSpecialLockConfirmTime(2000),
+	  m_nSpecialLockSetTSIDInterval(100)
 {
 	::InitializeCriticalSection(&m_CriticalSection);
 
@@ -228,23 +240,31 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam *pTuningParam)
 
 		OutputDebug(L"LockChannel: Start.\n");
 
+		BOOL isISDBS = pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_S_TMCC;
 		BOOL success = FALSE;
-		do {
-			// Dual Mode ISDB Tunerの場合はデモジュレーターの復調Modeを設定
-			if (m_bDualModeISDB) {
-				switch (pTuningParam->Modulation.Modulation) {
-				case BDA_MOD_ISDB_T_TMCC:
-					hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, PRIVATE_IO_CTL_FUNC_DEMOD_OFDM);
-					break;
-				case BDA_MOD_ISDB_S_TMCC:
-					hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, PRIVATE_IO_CTL_FUNC_DEMOD_PSK);
-					break;
-				}
+		BOOL failure = FALSE;
+		// Dual Mode ISDB Tunerの場合はデモジュレーターの復調Modeを設定
+		if (m_bDualModeISDB) {
+			switch (pTuningParam->Modulation.Modulation) {
+			case BDA_MOD_ISDB_T_TMCC:
+				::EnterCriticalSection(&m_CriticalSection);
+				hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, PRIVATE_IO_CTL_FUNC_DEMOD_OFDM);
+				::LeaveCriticalSection(&m_CriticalSection);
+				break;
+			case BDA_MOD_ISDB_S_TMCC:
+				::EnterCriticalSection(&m_CriticalSection);
+				hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, PRIVATE_IO_CTL_FUNC_DEMOD_PSK);
+				::LeaveCriticalSection(&m_CriticalSection);
+				break;
 			}
+		}
 
+		::EnterCriticalSection(&m_CriticalSection);
+		do {
 			ULONG State;
 			if (FAILED(hr = m_pIBDA_DeviceControl->GetChangeState(&State))) {
 				OutputDebug(L"  Fail to IBDA_DeviceControl::GetChangeState() function. ret=0x%08lx\n", hr);
+				failure = TRUE;
 				break;
 			}
 			// ペンディング状態のトランザクションがあるか確認
@@ -262,6 +282,7 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam *pTuningParam)
 			// トランザクション開始通知
 			if (FAILED(hr = m_pIBDA_DeviceControl->StartChanges())) {
 				OutputDebug(L"  Fail to IBDA_DeviceControl::StartChanges() function. ret=0x%08lx\n", hr);
+				failure = TRUE;
 				break;
 			}
 
@@ -322,7 +343,11 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam *pTuningParam)
 				m_pIBDA_FrequencyFilter->put_Polarity(pTuningParam->Polarisation);
 
 				// 周波数の帯域幅 (MHz)を設定
-				m_pIBDA_FrequencyFilter->put_Bandwidth((ULONG)pTuningParam->Modulation.BandWidth);
+				long bw = pTuningParam->Modulation.BandWidth;
+				if (isISDBS && bw == -1L) {
+					bw = 9L;
+				}
+				m_pIBDA_FrequencyFilter->put_Bandwidth(bw);
 
 				// RF 信号の周波数を設定
 				long freq = pTuningParam->Frequency;
@@ -358,25 +383,67 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam *pTuningParam)
 				// 失敗したら全ての変更を取り消す
 				hr = m_pIBDA_DeviceControl->StartChanges();
 				hr = m_pIBDA_DeviceControl->CommitChanges();
+				failure = TRUE;
 				break;
 			}
 			OutputDebug(L"  Succeeded to IBDA_DeviceControl::CommitChanges() function.\n");
-
-			// TSIDをSetする
-			hr = it35_PutISDBIoCtl(m_pIKsPropertySet, pTuningParam->TSID == 0 ? (DWORD)-1 : (DWORD)pTuningParam->TSID);
-
-			BOOLEAN locked = 0;
-			hr = m_pIBDA_SignalStatistics->get_SignalLocked(&locked);
-			OutputDebug(L"  SignalLocked=%d.\n", locked);
-
-			OutputDebug(L"LockChannel: Complete.\n");
-			if (locked)
-				success = TRUE;
-
 		} while (0);
+		::LeaveCriticalSection(&m_CriticalSection);
 
-//		return success ? S_OK : E_FAIL;
-		return S_OK;
+		if (failure) {
+			return E_FAIL;
+		}
+
+		long tsid = pTuningParam->TSID == 0 ? -1L : pTuningParam->TSID;
+		static constexpr int CONFIRM_RETRY_TIME = 50;
+		unsigned int confirmRemain = m_nSpecialLockConfirmTime;
+		unsigned int tsidInterval = 0;
+		while (1) {
+			if (!tsidInterval) {
+				if (isISDBS) {
+					// TSIDをセット
+					::EnterCriticalSection(&m_CriticalSection);
+					hr = it35_PutISDBIoCtl(m_pIKsPropertySet, (DWORD)tsid);
+					::LeaveCriticalSection(&m_CriticalSection);
+				}
+
+				// PID off
+				::EnterCriticalSection(&m_CriticalSection);
+				hr = it35_PutPidFilterOnOff(m_pIKsPropertySet, FALSE);
+				::LeaveCriticalSection(&m_CriticalSection);
+
+				// PID Map
+				BDA_PID_MAP pidMap = { MEDIA_SAMPLE_CONTENT::MEDIA_TRANSPORT_PACKET, 1, { 0x1fff } };
+				::EnterCriticalSection(&m_CriticalSection);
+				hr = m_pIKsPropertySet->Set(KSPROPSETID_BdaPIDFilter, KSPROPERTY_BDA_PIDFILTER_MAP_PIDS, &pidMap, sizeof(pidMap), &pidMap, sizeof(pidMap));
+				::LeaveCriticalSection(&m_CriticalSection);
+
+				tsidInterval = max(m_nSpecialLockSetTSIDInterval, CONFIRM_RETRY_TIME);
+			}
+
+			BOOLEAN sl = 0;
+			::EnterCriticalSection(&m_CriticalSection);
+			hr = m_pIBDA_SignalStatistics->get_SignalLocked(&sl);
+			::LeaveCriticalSection(&m_CriticalSection);
+			if (sl) {
+				OutputDebug(L"  Lock success.\n");
+				success = TRUE;
+				break;
+			}
+			unsigned int sleepTime = min(tsidInterval, min(confirmRemain, CONFIRM_RETRY_TIME));
+			if (!sleepTime) {
+				OutputDebug(L"  Timed out.\n");
+				break;
+			}
+			OutputDebug(L"    Waiting lock status remaining %d msec.\n", confirmRemain);
+			SleepWithMessageLoop((DWORD)sleepTime);
+			confirmRemain -= sleepTime;
+			tsidInterval -= sleepTime;
+		}
+
+		OutputDebug(L"LockChannel: Complete.\n");
+
+		return success ? S_OK : S_FALSE;
 	}
 
 	return E_NOINTERFACE;
@@ -413,6 +480,12 @@ const HRESULT CIT35Specials::ReadIniFile(const WCHAR *szIniFilePath)
 	// Dual Mode ISDB Tuner
 	m_bDualModeISDB = IniFileAccess.ReadKeyB(L"DualModeISDB", FALSE);
 
+	// BDASpecial固有のLockChannelを使用する場合のLock完了確認時間
+	m_nSpecialLockConfirmTime = IniFileAccess.ReadKeyI(L"SpecialLockConfirmTime", 2000);
+
+	// BDASpecial固有のLockChannelを使用する場合のLock完了待ち時にTSID / PID mapの再セットを行うインターバル時間
+	m_nSpecialLockSetTSIDInterval = IniFileAccess.ReadKeyI(L"SpecialLockSetTSIDInterval", 100);
+
 	return S_OK;
 }
 
@@ -439,27 +512,35 @@ const HRESULT CIT35Specials::PreLockChannel(TuningParam *pTuningParam)
 	if (m_nPrivateSetTSID == enumPrivateSetTSID::ePrivateSetTSIDSpecial)
 		return S_OK;
 
-	// IF周波数に変換
-	if (m_bRewriteIFFreq) {
-		long freq = pTuningParam->Frequency;
-		if (pTuningParam->Antenna.LNBSwitch != -1) {
-			if (pTuningParam->Frequency < pTuningParam->Antenna.LNBSwitch) {
-				if (pTuningParam->Frequency > pTuningParam->Antenna.LowOscillator && pTuningParam->Antenna.HighOscillator != -1)
-					pTuningParam->Frequency -= pTuningParam->Antenna.LowOscillator;
-			}
-			else {
-				if (pTuningParam->Frequency > pTuningParam->Antenna.HighOscillator && pTuningParam->Antenna.HighOscillator != -1)
-					pTuningParam->Frequency -= pTuningParam->Antenna.HighOscillator;
-			}
+	if (pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_S_TMCC) {
+		// 周波数の帯域幅を9に設定
+		long bw = pTuningParam->Modulation.BandWidth;
+		if (pTuningParam->Modulation.BandWidth == -1L) {
+			pTuningParam->Modulation.BandWidth = 9L;
 		}
-		else {
-			if (pTuningParam->Antenna.Tone == 0) {
-				if (pTuningParam->Frequency > pTuningParam->Antenna.LowOscillator && pTuningParam->Antenna.HighOscillator != -1)
-					pTuningParam->Frequency -= pTuningParam->Antenna.LowOscillator;
+
+		// IF周波数に変換
+		if (m_bRewriteIFFreq) {
+			long freq = pTuningParam->Frequency;
+			if (pTuningParam->Antenna.LNBSwitch != -1) {
+				if (pTuningParam->Frequency < pTuningParam->Antenna.LNBSwitch) {
+					if (pTuningParam->Frequency > pTuningParam->Antenna.LowOscillator && pTuningParam->Antenna.HighOscillator != -1)
+						pTuningParam->Frequency -= pTuningParam->Antenna.LowOscillator;
+				}
+				else {
+					if (pTuningParam->Frequency > pTuningParam->Antenna.HighOscillator && pTuningParam->Antenna.HighOscillator != -1)
+						pTuningParam->Frequency -= pTuningParam->Antenna.HighOscillator;
+				}
 			}
 			else {
-				if (pTuningParam->Frequency > pTuningParam->Antenna.HighOscillator && pTuningParam->Antenna.HighOscillator != -1)
-					pTuningParam->Frequency -= pTuningParam->Antenna.HighOscillator;
+				if (pTuningParam->Antenna.Tone == 0) {
+					if (pTuningParam->Frequency > pTuningParam->Antenna.LowOscillator && pTuningParam->Antenna.HighOscillator != -1)
+						pTuningParam->Frequency -= pTuningParam->Antenna.LowOscillator;
+				}
+				else {
+					if (pTuningParam->Frequency > pTuningParam->Antenna.HighOscillator && pTuningParam->Antenna.HighOscillator != -1)
+						pTuningParam->Frequency -= pTuningParam->Antenna.HighOscillator;
+				}
 			}
 		}
 	}
@@ -481,10 +562,14 @@ const HRESULT CIT35Specials::PreTuneRequest(const TuningParam *pTuningParam, ITu
 	if (m_bDualModeISDB) {
 		switch (pTuningParam->Modulation.Modulation) {
 		case BDA_MOD_ISDB_T_TMCC:
+			::EnterCriticalSection(&m_CriticalSection);
 			hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, PRIVATE_IO_CTL_FUNC_DEMOD_OFDM);
+			::LeaveCriticalSection(&m_CriticalSection);
 			break;
 		case BDA_MOD_ISDB_S_TMCC:
+			::EnterCriticalSection(&m_CriticalSection);
 			hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, PRIVATE_IO_CTL_FUNC_DEMOD_PSK);
+			::LeaveCriticalSection(&m_CriticalSection);
 			break;
 		}
 	}
@@ -508,12 +593,26 @@ const HRESULT CIT35Specials::PostTuneRequest(const TuningParam * pTuningParam)
 
 	HRESULT hr;
 
-	// TSIDをSetする
-	if (m_nPrivateSetTSID == enumPrivateSetTSID::ePrivateSetTSIDPostTR && pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_S_TMCC) {
+	if (m_nPrivateSetTSID == enumPrivateSetTSID::ePrivateSetTSIDPostTR) {
+		// TSIDをSetする
+		if (pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_S_TMCC) {
+			::EnterCriticalSection(&m_CriticalSection);
+			hr = it35_PutISDBIoCtl(m_pIKsPropertySet, pTuningParam->TSID == 0 ? (DWORD)-1 : (DWORD)pTuningParam->TSID);
+			::LeaveCriticalSection(&m_CriticalSection);
+		}
+
+		// PID off
 		::EnterCriticalSection(&m_CriticalSection);
-		hr = it35_PutISDBIoCtl(m_pIKsPropertySet, pTuningParam->TSID == 0 ? (DWORD)-1 : (DWORD)pTuningParam->TSID);
+		hr = it35_PutPidFilterOnOff(m_pIKsPropertySet, FALSE);
+		::LeaveCriticalSection(&m_CriticalSection);
+
+		// PID Map
+		BDA_PID_MAP pidMap = { MEDIA_SAMPLE_CONTENT::MEDIA_TRANSPORT_PACKET, 1, { 0x1fff } };
+		::EnterCriticalSection(&m_CriticalSection);
+		hr = m_pIKsPropertySet->Set(KSPROPSETID_BdaPIDFilter, KSPROPERTY_BDA_PIDFILTER_MAP_PIDS, &pidMap, sizeof(pidMap), &pidMap, sizeof(pidMap));
 		::LeaveCriticalSection(&m_CriticalSection);
 	}
+
 	return S_OK;
 }
 
