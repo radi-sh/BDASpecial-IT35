@@ -3,6 +3,12 @@
 #include <Windows.h>
 #include <string>
 
+// Tuner Power 自動制御モード
+enum enumTunerPowerMode {
+	eTunerPowerModeAuto = 1,		// Tuner Power の自動制御を有効にする
+	eTunerPowerModeAlwaysOn,		// Tuner Power の自動制御を無効にし、常時ONにする
+};
+
 class CCOMProc {
 private:
 	enum enumCOMRequest {
@@ -57,11 +63,12 @@ private:
 	std::wstring TunerFriendlyName;	// チューナー識別用FriendlyName
 	std::wstring TunerInstancePath; // チューナー識別用デバイスインスタンスパス
 	std::wstring TunerDisplayName;  // チューナーから取得したDisplayName
+	enumTunerPowerMode PowerMode;	// Tuner Power 自動制御モード
 
 public:
 	CCOMProc(void);
 	~CCOMProc(void);
-	void SetTunerFriendlyName(std::wstring friendlyName, std::wstring instancePath);
+	void SetTunerFriendlyName(std::wstring friendlyName, std::wstring instancePath, enumTunerPowerMode powerMode);
 	std::wstring GetTunerDisplayName(void);
 	BOOL CreateThread(void);
 	void TerminateThread(void);

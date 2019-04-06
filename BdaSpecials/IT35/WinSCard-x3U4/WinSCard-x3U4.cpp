@@ -285,6 +285,12 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 		DisableThreadLibraryCalls(hModule);
 		l_hStartedEvent = CreateEvent(NULL, TRUE, TRUE, NULL);
 		::InitializeCriticalSection(&l_csInit);
+
+		static const std::map<const std::wstring, const int, std::less<>> mapTunerPowerMode = {
+			{ L"AUTOOFF",  enumTunerPowerMode::eTunerPowerModeAuto },
+			{ L"ALWAYSON", enumTunerPowerMode::eTunerPowerModeAlwaysOn },
+		};
+
 		// iniファイルのpath取得
 		std::wstring tempPath = common::GetModuleName(l_hModule);
 		CIniFileAccess IniFileAccess(tempPath + L"ini");
@@ -296,7 +302,9 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 		name = IniFileAccess.ReadKeyS(L"FriendlyName", name);
 		// tunerのデバイスインスタンスパス取得
 		dip = IniFileAccess.ReadKeyS(L"TunerInstancePath", L"");
-		COMProc.SetTunerFriendlyName(name, dip);
+		// Tuner Power 自動制御モード
+		enumTunerPowerMode powerMode = (enumTunerPowerMode)IniFileAccess.ReadKeyIValueMap(L"TunerPowerMode", enumTunerPowerMode::eTunerPowerModeAuto, mapTunerPowerMode);
+		COMProc.SetTunerFriendlyName(name, dip, powerMode);
 
 		// Debug Logを記録するかどうか
 		if (IniFileAccess.ReadKeyB(L"DebugLog", FALSE)) {
