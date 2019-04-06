@@ -88,7 +88,8 @@ CIT35Specials::CIT35Specials(HMODULE hMySelf, CComPtr<IBaseFilter> pTunerDevice)
 	  m_bLNBPowerON(FALSE),
 	  m_bDualModeISDB(FALSE),
 	  m_nSpecialLockConfirmTime(2000),
-	  m_nSpecialLockSetTSIDInterval(100)
+	  m_nSpecialLockSetTSIDInterval(100),
+	  m_nTunerPowerMode(enumTunerPowerMode::eTunerPowerModeNoTouch)
 {
 	::InitializeCriticalSection(&m_CriticalSection);
 
@@ -176,6 +177,19 @@ const HRESULT CIT35Specials::InitializeHook(void)
 				}
 			}
 		}
+	}
+
+	if (m_nTunerPowerMode != enumTunerPowerMode::eTunerPowerModeNoTouch) {
+		// Tuner Power手動モードにする
+		hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, PRIVATE_IO_CTL_FUNC_TUNER_POWER_MODE_MANUAL);
+		// Tuner Powerを一旦OFFにする
+		hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, PRIVATE_IO_CTL_FUNC_SET_TUNER_POWER_OFF);
+		// Tuner PowerをONする
+		hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, PRIVATE_IO_CTL_FUNC_SET_TUNER_POWER_ON);
+	}
+	if (m_nTunerPowerMode == enumTunerPowerMode::eTunerPowerModeAuto) {
+		// Tuner Power自動モードに戻す(TunerをCloseすると自動的にOFFになる)
+		hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, PRIVATE_IO_CTL_FUNC_TUNER_POWER_MODE_AUTO);
 	}
 
 	if (m_bLNBPowerON) {
@@ -465,6 +479,12 @@ const HRESULT CIT35Specials::ReadIniFile(const WCHAR *szIniFilePath)
 		{ L"SPECIAL", enumPrivateSetTSID::ePrivateSetTSIDSpecial },
 	};
 
+	static const std::map<const std::wstring, const int, std::less<>> mapTunerPowerMode = {
+		{ L"NOTOUCH",  enumTunerPowerMode::eTunerPowerModeNoTouch },
+		{ L"AUTOOFF",  enumTunerPowerMode::eTunerPowerModeAuto },
+		{ L"ALWAYSON", enumTunerPowerMode::eTunerPowerModeAlwaysOn },
+	};
+
 	CIniFileAccess IniFileAccess(szIniFilePath);
 	IniFileAccess.SetSectionName(L"IT35");
 
@@ -485,6 +505,9 @@ const HRESULT CIT35Specials::ReadIniFile(const WCHAR *szIniFilePath)
 
 	// BDASpecial固有のLockChannelを使用する場合のLock完了待ち時にTSID / PID mapの再セットを行うインターバル時間
 	m_nSpecialLockSetTSIDInterval = IniFileAccess.ReadKeyI(L"SpecialLockSetTSIDInterval", 100);
+
+	// Tuner Power 自動制御モード
+	m_nTunerPowerMode = (enumTunerPowerMode)IniFileAccess.ReadKeyIValueMap(L"TunerPowerMode", enumTunerPowerMode::eTunerPowerModeNoTouch, mapTunerPowerMode);
 
 	return S_OK;
 }
