@@ -400,9 +400,9 @@ DWORD WINAPI CCOMProc::COMProcThread(LPVOID lpParameter)
 			}
 
 			// これをやっておかないと、Bondriverがチューナーをオープンしている時しか CARD にアクセスできない
-			hr = it35_DigibestPrivateIoControl(pIKsPropertySet, PRIVATE_IO_CTL_FUNC_UNPROTECT_TUNER_POWER);
+			hr = it35_DigibestPrivateIoControl(pIKsPropertySet, PRIVATE_IO_CTL_FUNC_TUNER_POWER_MODE_MANUAL);
 			hr = it35_DigibestPrivateIoControl(pIKsPropertySet, PRIVATE_IO_CTL_FUNC_SET_TUNER_POWER_ON);
-			hr = it35_DigibestPrivateIoControl(pIKsPropertySet, PRIVATE_IO_CTL_FUNC_PROTECT_TUNER_POWER);
+			hr = it35_DigibestPrivateIoControl(pIKsPropertySet, PRIVATE_IO_CTL_FUNC_TUNER_POWER_MODE_AUTO);
 
 			// チューナーのGUIDを保存
 			pCOMProc->TunerDisplayName = guid;
