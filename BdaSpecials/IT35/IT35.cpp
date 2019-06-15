@@ -155,7 +155,7 @@ const HRESULT CIT35Specials::SetLNBPower(bool bActive)
 
 const HRESULT CIT35Specials::ReadIniFile(const WCHAR *szIniFilePath)
 {
-	static const std::map<const std::wstring, const int, std::less<>> mapPrivateSetTSID = {
+	const std::map<const std::wstring, const int, std::less<>> mapPrivateSetTSID = {
 		{ L"NO",      enumPrivateSetTSID::ePrivateSetTSIDNone },
 		{ L"YES",     enumPrivateSetTSID::ePrivateSetTSIDPreTR },
 		{ L"PRETR",   enumPrivateSetTSID::ePrivateSetTSIDPreTR },
