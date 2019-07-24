@@ -62,14 +62,6 @@ enum KSPROPERTY_BDA_DIGITAL_DEMODULATOR {
 };
 
 // KSCATEGORY_BDA_NETWORK_TUNER Tuner filter, id:0
-static constexpr GUID KSPROPSETID_BdaPIDFilter = { 0xd0a67d65, 0x8df, 0x4fec,{ 0x85, 0x33, 0xe5, 0xb5, 0x50, 0x41, 0xb, 0x85 } };
-
-enum KSPROPERTY_BDA_PIDFILTER {
-	KSPROPERTY_BDA_PIDFILTER_MAP_PIDS = 0,				// set only			MinProperty=32		MinData=12
-	KSPROPERTY_BDA_PIDFILTER_UNMAP_PIDS,				// set only			MinProperty=32		MinData=8
-	KSPROPERTY_BDA_PIDFILTER_LIST_PIDS,					// set pnly			MinProperty=32		MinData=0
-};
-
 static constexpr GUID KSMETHODSETID_BdaChangeSync = { 0xfd0a5af3, 0xb41d, 0x11d2,{ 0x9c, 0x95, 0x0, 0xc0, 0x4f, 0x79, 0x71, 0xe0 } };
 
 enum KSMETHOD_BDA_CHANGE_SYNC {
@@ -86,6 +78,15 @@ enum KSMETHOD_BDA_DEVICE_CONFIGURATION {
 	KSMETHOD_BDA_CREATE_PIN_FACTORY = 0,				// not supported
 	KSMETHOD_BDA_DELETE_PIN_FACTORY,					// not supported
 	KSMETHOD_BDA_CREATE_TOPOLOGY,						// modify			MinMethod=32		MinData=0
+};
+
+// KSCATEGORY_BDA_NETWORK_TUNER Tuner filter, id:0
+static constexpr GUID KSPROPSETID_BdaPIDFilter = { 0xd0a67d65, 0x8df, 0x4fec,{ 0x85, 0x33, 0xe5, 0xb5, 0x50, 0x41, 0xb, 0x85 } };
+
+enum KSPROPERTY_BDA_PIDFILTER {
+	KSPROPERTY_BDA_PIDFILTER_MAP_PIDS = 0,				// set only			MinProperty=32		MinData=12
+	KSPROPERTY_BDA_PIDFILTER_UNMAP_PIDS,				// set only			MinProperty=32		MinData=8
+	KSPROPERTY_BDA_PIDFILTER_LIST_PIDS,					// set pnly			MinProperty=32		MinData=0
 };
 */
 
@@ -117,6 +118,23 @@ enum KSPROPERTY_ITE_EXTENSION {
 	KSPROPERTY_ITE_EX_MERCURY_SIGNAL_STRENGTH,			// get only			MinProperty=24		MinData=1
 	KSPROPERTY_ITE_EX_CHANNEL_MODULATION = 99,			// get only			MinProperty=24		MinData=36
 };
+
+// ITE 拡張プロパティ KSPROPERTY_ITE_EX_MERCURY_DRIVER_INFO 用構造体
+#pragma pack(1)
+struct DriverInfo {
+	DWORD DriverVer;
+	DWORD DriverVer2;
+};
+#pragma pack()
+
+// ITE 拡張プロパティ KSPROPERTY_ITE_EX_MERCURY_DEVICE_INFO 用構造体
+#pragma pack(1)
+struct DeviceInfo {
+	WORD USBVer;
+	WORD VenderID;
+	WORD ProductID;
+};
+#pragma pack()
 
 // KSCATEGORY_BDA_NETWORK_TUNER Tuner filter, id:0
 // DVB-S IO コントロール プロパティセット GUID
@@ -246,6 +264,60 @@ enum PRIVATE_IO_CTL_FUNC_CODE {
 //
 // ITE 拡張プロパティセット用関数
 //
+// Driver 情報取得
+static inline HRESULT it35_GetDriverInfo(IKsPropertySet* pIKsPropertySet, DriverInfo* pInfo)
+{
+	HRESULT hr = S_OK;
+	DWORD dwBytes;
+
+	if (FAILED(hr = pIKsPropertySet->Get(KSPROPSETID_IteExtension, KSPROPERTY_ITE_EX_MERCURY_DRIVER_INFO, NULL, 0, pInfo, sizeof(DriverInfo), &dwBytes))) {
+		return hr;
+	}
+
+	return hr;
+}
+
+// Device 情報取得
+static inline HRESULT it35_GetDeviceInfo(IKsPropertySet* pIKsPropertySet, DeviceInfo* pInfo)
+{
+	HRESULT hr = S_OK;
+	DWORD dwBytes;
+
+	if (FAILED(hr = pIKsPropertySet->Get(KSPROPSETID_IteExtension, KSPROPERTY_ITE_EX_MERCURY_DEVICE_INFO, NULL, 0, pInfo, sizeof(DeviceInfo), &dwBytes))) {
+		return hr;
+	}
+
+	return hr;
+}
+
+// USB Bulk 送信実行 ＆ 受信
+static inline HRESULT it35_RcvBulkData(IKsPropertySet* pIKsPropertySet, BYTE* pRcvBuff, DWORD* pdwLength)
+{
+	HRESULT hr = S_OK;
+	DWORD dwBytes;
+
+	if (FAILED(hr = pIKsPropertySet->Get(KSPROPSETID_IteExtension, KSPROPERTY_ITE_EX_BULK_DATA, NULL, 0, pRcvBuff, *pdwLength, &dwBytes))) {
+		return hr;
+	}
+
+	if (pdwLength)
+		*pdwLength = dwBytes;
+
+	return hr;
+}
+
+// USB Bulk 送信データ設定
+static inline HRESULT it35_SendBulkData(IKsPropertySet* pIKsPropertySet, const BYTE* pSendBuff, DWORD dwLength)
+{
+	return pIKsPropertySet->Set(KSPROPSETID_IteExtension, KSPROPERTY_ITE_EX_BULK_DATA, NULL, 0, (LPVOID)pSendBuff, dwLength);
+}
+
+// PID Filter ON/OFF設定
+static inline HRESULT it35_PutPidFilterOnOff(IKsPropertySet *pIKsPropertySet, DWORD dwData)
+{
+	return pIKsPropertySet->Set(KSPROPSETID_IteExtension, KSPROPERTY_ITE_EX_PID_FILTER_ON_OFF, NULL, 0, &dwData, sizeof(dwData));
+}
+
 // チューニング帯域幅取得
 static inline HRESULT it35_GetBandWidth(IKsPropertySet *pIKsPropertySet, WORD *pwData)
 {
@@ -269,25 +341,41 @@ static inline HRESULT it35_PutBandWidth(IKsPropertySet *pIKsPropertySet, WORD wD
 }
 
 // チューニング周波数取得
-static inline HRESULT it35_GetFreq(IKsPropertySet *pIKsPropertySet, WORD *pwData)
+static inline HRESULT it35_GetFreq(IKsPropertySet *pIKsPropertySet, DWORD *pdwData)
 {
 	HRESULT hr = S_OK;
 	DWORD dwBytes;
-	BYTE buf[sizeof(*pwData)];
+	BYTE buf[sizeof(*pdwData)];
 	if (FAILED(hr = pIKsPropertySet->Get(KSPROPSETID_IteExtension, KSPROPERTY_ITE_EX_FREQ, NULL, 0, buf, sizeof(buf), &dwBytes))) {
 		return hr;
 	}
 
-	if (pwData)
-		*pwData = *(WORD*)buf;
+	if (pdwData)
+		*pdwData = *(DWORD*)buf;
 
 	return hr;
 }
 
 // チューニング周波数設定
-static inline HRESULT it35_PutFreq(IKsPropertySet *pIKsPropertySet, WORD wData)
+static inline HRESULT it35_PutFreq(IKsPropertySet *pIKsPropertySet, DWORD dwData)
 {
-	return pIKsPropertySet->Set(KSPROPSETID_IteExtension, KSPROPERTY_ITE_EX_FREQ, NULL, 0, &wData, sizeof(wData));
+	return pIKsPropertySet->Set(KSPROPSETID_IteExtension, KSPROPERTY_ITE_EX_FREQ, NULL, 0, &dwData, sizeof(dwData));
+}
+
+// 信号強度取得
+static inline HRESULT it35_GetSignalStrength(IKsPropertySet* pIKsPropertySet, DWORD* pdwData)
+{
+	HRESULT hr = S_OK;
+	DWORD dwBytes;
+	BYTE buf[sizeof(*pdwData)];
+	if (FAILED(hr = pIKsPropertySet->Get(KSPROPSETID_IteExtension, KSPROPERTY_ITE_EX_MERCURY_SIGNAL_STRENGTH, NULL, 0, buf, sizeof(buf), &dwBytes))) {
+		return hr;
+	}
+
+	if (pdwData)
+		* pdwData = *(DWORD*)buf;
+
+	return hr;
 }
 
 //
@@ -340,7 +428,7 @@ static inline HRESULT it35_GetDrvData(IKsPropertySet *pIKsPropertySet, DWORD dwC
 }
 
 // ドライバーバージョン情報取得
-static inline HRESULT it35_GetDriverInfo(IKsPropertySet *pIKsPropertySet, DrvDataDataSet *pData)
+static inline HRESULT it35_GetDriverData(IKsPropertySet *pIKsPropertySet, DrvDataDataSet *pData)
 {
 	return it35_GetDrvData(pIKsPropertySet, DRV_DATA_FUNC_GET_DRIVER_INFO, pData);
 }
@@ -566,6 +654,16 @@ static inline HRESULT it35_IsUartReady(IKsPropertySet *pIKsPropertySet, BOOL *pb
 		*pbReady = (BOOL)dataset.UartReady;
 
 	return hr;
+}
+
+// OneSeg モード設定
+static inline HRESULT it35_PutOneSeg(IKsPropertySet* pIKsPropertySet, BOOL bIsOneSeg)
+{
+	DevIoCtlDataSet dataset;
+
+	dataset.DeviceId = (DWORD)bIsOneSeg;
+
+	return it35_GetDevIoCtl(pIKsPropertySet, FALSE, DEV_IO_CTL_FUNC_SET_ONE_SEG, NULL, &dataset);
 }
 
 // 消費電流取得?
