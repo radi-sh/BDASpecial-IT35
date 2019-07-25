@@ -50,18 +50,10 @@ private:
 		ePrivateSetTSIDSpecial = 100,			// 全てのチューニング操作をLockChannelで行う
 	};
 
-	// Tuner Power 自動制御モード
-	enum enumTunerPowerMode {
-		eTunerPowerModeNoTouch = 0,				// Tuner Power 自動制御モードの変更を行わない
-		eTunerPowerModeAuto,					// Tuner Power の自動制御を有効にする
-		eTunerPowerModeAlwaysOn,				// Tuner Power の自動制御を無効にし、常時ONにする
-	};
-
 	BOOL m_bRewriteIFFreq;						// IF周波数で put_CarrierFrequency() を行う
 	enumPrivateSetTSID m_nPrivateSetTSID;		// 固有の Property set を使用してTSIDの書込みを行うモード
 	BOOL m_bLNBPowerON;							// LNB電源の供給をONする
 	BOOL m_bDualModeISDB;						// Dual Mode ISDB Tuner
 	unsigned int m_nSpecialLockConfirmTime;		// BDASpecial固有のLockChannelを使用する場合のLock完了確認時間
 	unsigned int m_nSpecialLockSetTSIDInterval;	// BDASpecial固有のLockChannelを使用する場合のLock完了待ち時にTSID / PID mapの再セットを行うインターバル時間
-	enumTunerPowerMode m_nTunerPowerMode;		// Tuner Power 自動制御モード
 };
