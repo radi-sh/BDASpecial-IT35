@@ -465,6 +465,7 @@
     <ClInclude Include="..\..\common\IBdaSpecials.h" />
     <ClInclude Include="..\..\common\IBdaSpecials2.h" />
     <ClInclude Include="..\..\common\LockChannel.h" />
+    <ClInclude Include="..\..\common\WaitWithMsg.h" />
     <ClInclude Include="IT35.h" />
     <ClInclude Include="IT35propset.h" />
   </ItemGroup>

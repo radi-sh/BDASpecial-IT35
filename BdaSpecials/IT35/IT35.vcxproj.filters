@@ -56,6 +56,9 @@
     <ClInclude Include="..\..\common\DSFilterEnum.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\common\WaitWithMsg.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\doc\BonDriver_PX_x3U4_S.ini">

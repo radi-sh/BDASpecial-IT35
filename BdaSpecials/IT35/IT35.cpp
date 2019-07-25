@@ -83,12 +83,17 @@ CIT35Specials::CIT35Specials(HMODULE hMySelf, CComPtr<IBaseFilter> pTunerDevice)
 	: m_hMySelf(hMySelf),
 	  m_pTunerDevice(pTunerDevice),
 	  m_pIKsPropertySet(m_pTunerDevice),
-	  m_bRewriteIFFreq(FALSE),
+	  m_bRewriteIFFreq(TRUE),
 	  m_nPrivateSetTSID(enumPrivateSetTSID::ePrivateSetTSIDNone),
+	  m_nVID(-1),
+	  m_nPID(-1),
+	  m_nTunerID(-1),
 	  m_bLNBPowerON(FALSE),
 	  m_bDualModeISDB(FALSE),
 	  m_nSpecialLockConfirmTime(2000),
-	  m_nSpecialLockSetTSIDInterval(100)
+	  m_nSpecialLockSetTSIDInterval(100),
+	  m_bRewriteNominalRate(FALSE),
+	  m_byNominalRate_List()
 {
 	::InitializeCriticalSection(&m_CriticalSection);
 
@@ -126,7 +131,7 @@ const HRESULT CIT35Specials::InitializeHook(void)
 	}
 
 	// Control Node 取得
-	if (m_nPrivateSetTSID == enumPrivateSetTSID::ePrivateSetTSIDSpecial) {
+	{
 		CDSEnumNodes DSEnumNodes(m_pTunerDevice);
 
 		// IBDA_FrequencyFilter / IBDA_SignalStatistics / IBDA_LNBInfo / IBDA_DiseqCommand
@@ -178,6 +183,35 @@ const HRESULT CIT35Specials::InitializeHook(void)
 		}
 	}
 
+	DeviceInfo deviceInfo = {};
+	DriverInfo driverInfo = {};
+	DrvDataDataSet drvData = {};
+
+	if (FAILED(hr = it35_GetDeviceInfo(m_pIKsPropertySet, &deviceInfo))) {
+		OutputDebug(L"Fail to get device info.\n");
+	}
+	else {
+		OutputDebug(L"  USB Ver=0x%04x, Vender ID=0x%04x, Product ID=0x%04x.\n", deviceInfo.USBVer, deviceInfo.VenderID, deviceInfo.ProductID);
+		m_nVID = deviceInfo.VenderID;
+		m_nPID = deviceInfo.ProductID;
+	}
+
+	if (FAILED(hr = it35_GetDriverInfo(m_pIKsPropertySet, &driverInfo))) {
+		OutputDebug(L"Fail to get driver info.\n");
+	}
+	else {
+		OutputDebug(L"  Driver Ver=0x%08x, Driver Ver2=0x%08x.\n", driverInfo.DriverVer, driverInfo.DriverVer2);
+	}
+
+	if (FAILED(hr = it35_GetDriverData(m_pIKsPropertySet, &drvData))) {
+		OutputDebug(L"Fail to get driver data.\n");
+	}
+	else {
+		OutputDebug(L"  Driver PID=0x%08x, Driver Version=0x%08x, Tuner ID=0x%08x.\n",
+			drvData.DriverInfo.DriverPID, drvData.DriverInfo.DriverVersion, drvData.DriverInfo.TunerID);
+		m_nTunerID = drvData.DriverInfo.TunerID;
+	}
+
 	if (m_bLNBPowerON) {
 		// iniファイルで指定されていれば ここでLNB Power をONする
 		// LNB Power のOFFはBDA driverが勝手にやってくれるみたい
@@ -220,6 +254,11 @@ const HRESULT CIT35Specials::LockChannel(BYTE bySatellite, BOOL bHorizontal, uns
 
 const HRESULT CIT35Specials::LockChannel(const TuningParam *pTuningParam)
 {
+	static DWORD lastIsdbMode = -1;
+	static ModulationType lastModulationType = BDA_MOD_NOT_DEFINED;
+	static ULONG lastMultiplier = 0;
+	static ULONG lastBandWidth = 0;
+
 	if (m_nPrivateSetTSID == enumPrivateSetTSID::ePrivateSetTSIDSpecial) {
 		if (m_pTunerDevice == NULL) {
 			return E_POINTER;
@@ -230,38 +269,38 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam *pTuningParam)
 		}
 
 		HRESULT hr;
-		SpectralInversion eSpectralInversion = BDA_SPECTRAL_INVERSION_NOT_SET;
-		FECMethod eInnerFECMethod = BDA_FEC_METHOD_NOT_SET;
-		BinaryConvolutionCodeRate eInnerFECRate = BDA_BCC_RATE_NOT_SET;
+
 		ModulationType eModulationType = BDA_MOD_NOT_SET;
-		FECMethod eOuterFECMethod = BDA_FEC_METHOD_NOT_SET;
-		BinaryConvolutionCodeRate eOuterFECRate = BDA_BCC_RATE_NOT_SET;
-		ULONG SymbolRate = (ULONG)-1L;
 
 		OutputDebug(L"LockChannel: Start.\n");
 
-		BOOL isISDBS = pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_S_TMCC;
 		BOOL success = FALSE;
 		BOOL failure = FALSE;
 		// Dual Mode ISDB Tunerの場合はデモジュレーターの復調Modeを設定
 		if (m_bDualModeISDB) {
+			DWORD isdbMode = -1;
 			switch (pTuningParam->Modulation.Modulation) {
 			case BDA_MOD_ISDB_T_TMCC:
-				::EnterCriticalSection(&m_CriticalSection);
-				hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, PRIVATE_IO_CTL_FUNC_DEMOD_OFDM);
-				::LeaveCriticalSection(&m_CriticalSection);
+				isdbMode = PRIVATE_IO_CTL_FUNC_DEMOD_OFDM;
 				break;
 			case BDA_MOD_ISDB_S_TMCC:
-				::EnterCriticalSection(&m_CriticalSection);
-				hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, PRIVATE_IO_CTL_FUNC_DEMOD_PSK);
-				::LeaveCriticalSection(&m_CriticalSection);
+				isdbMode = PRIVATE_IO_CTL_FUNC_DEMOD_PSK;
 				break;
 			}
+			if (isdbMode != lastIsdbMode) {
+				::EnterCriticalSection(&m_CriticalSection);
+				hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, isdbMode);
+				::LeaveCriticalSection(&m_CriticalSection);
+			}
+			if (lastIsdbMode == -1) {
+				SleepWithMessageLoop(500);
+			}
+			lastIsdbMode = isdbMode;
 		}
 
 		::EnterCriticalSection(&m_CriticalSection);
 		do {
-			ULONG State;
+			ULONG State = 0;
 			if (FAILED(hr = m_pIBDA_DeviceControl->GetChangeState(&State))) {
 				OutputDebug(L"  Fail to IBDA_DeviceControl::GetChangeState() function. ret=0x%08lx\n", hr);
 				failure = TRUE;
@@ -274,9 +313,6 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam *pTuningParam)
 				if (FAILED(hr = m_pIBDA_DeviceControl->CommitChanges())) {
 					OutputDebug(L"    Fail to CommitChanges. ret=0x%08lx\n", hr);
 				}
-				else {
-					OutputDebug(L"    Succeeded to CommitChanges.\n");
-				}
 			}
 
 			// トランザクション開始通知
@@ -286,73 +322,39 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam *pTuningParam)
 				break;
 			}
 
-			// IBDA_LNBInfo
-			if (m_pIBDA_LNBInfo) {
-				// LNB 周波数を設定
-				m_pIBDA_LNBInfo->put_LocalOscilatorFrequencyHighBand((ULONG)pTuningParam->Antenna.HighOscillator);
-				m_pIBDA_LNBInfo->put_LocalOscilatorFrequencyLowBand((ULONG)pTuningParam->Antenna.LowOscillator);
-
-				// LNBスイッチの周波数を設定
-				if (pTuningParam->Antenna.LNBSwitch != -1L) {
-					// LNBSwitch周波数の設定がされている
-					m_pIBDA_LNBInfo->put_HighLowSwitchFrequency((ULONG)pTuningParam->Antenna.LNBSwitch);
-				}
-				else {
-					// 10GHzを設定しておけばHigh側に、20GHzを設定しておけばLow側に切替わるはず
-					m_pIBDA_LNBInfo->put_HighLowSwitchFrequency((pTuningParam->Antenna.Tone != 0L) ? 10000000UL : 20000000UL);
-				}
-			}
-
 			// IBDA_DigitalDemodulator
 			if (m_pIBDA_DigitalDemodulator) {
-				// 位相変調スペクトル反転の種類
-				eSpectralInversion = BDA_SPECTRAL_INVERSION_AUTOMATIC;
-				m_pIBDA_DigitalDemodulator->put_SpectralInversion(&eSpectralInversion);
-
-				// 内部前方誤り訂正のタイプを設定
-				eInnerFECMethod = pTuningParam->Modulation.InnerFEC;
-				m_pIBDA_DigitalDemodulator->put_InnerFECMethod(&eInnerFECMethod);
-
-				// 内部 FEC レートを設定
-				eInnerFECRate = pTuningParam->Modulation.InnerFECRate;
-				m_pIBDA_DigitalDemodulator->put_InnerFECRate(&eInnerFECRate);
-
 				// 変調タイプを設定
 				eModulationType = pTuningParam->Modulation.Modulation;
-				m_pIBDA_DigitalDemodulator->put_ModulationType(&eModulationType);
-
-				// 外部前方誤り訂正のタイプを設定
-				eOuterFECMethod = pTuningParam->Modulation.OuterFEC;
-				m_pIBDA_DigitalDemodulator->put_OuterFECMethod(&eOuterFECMethod);
-
-				// 外部 FEC レートを設定
-				eOuterFECRate = pTuningParam->Modulation.OuterFECRate;
-				m_pIBDA_DigitalDemodulator->put_OuterFECRate(&eOuterFECRate);
-
-				// シンボル レートを設定
-				SymbolRate = (ULONG)pTuningParam->Modulation.SymbolRate;
-				m_pIBDA_DigitalDemodulator->put_SymbolRate(&SymbolRate);
+				if (lastModulationType != eModulationType) {
+					m_pIBDA_DigitalDemodulator->put_ModulationType(&eModulationType);
+					lastModulationType = eModulationType;
+				}
 			}
 
 			// IBDA_FrequencyFilter
 			if (m_pIBDA_FrequencyFilter) {
 				// 周波数の単位(Hz)を設定
-				m_pIBDA_FrequencyFilter->put_FrequencyMultiplier(1000UL);
-
-				// 信号の偏波を設定
-				m_pIBDA_FrequencyFilter->put_Polarity(pTuningParam->Polarisation);
+				ULONG Multiplier = 1000UL;
+				if (lastMultiplier != Multiplier) {
+					m_pIBDA_FrequencyFilter->put_FrequencyMultiplier(Multiplier);
+					lastMultiplier = Multiplier;
+				}
 
 				// 周波数の帯域幅 (MHz)を設定
 				long bw = pTuningParam->Modulation.BandWidth;
-				if (isISDBS && bw == -1L) {
+				if (pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_S_TMCC && bw == -1L) {
 					bw = 9L;
 				}
-				m_pIBDA_FrequencyFilter->put_Bandwidth(bw);
+				if (lastBandWidth != bw) {
+					m_pIBDA_FrequencyFilter->put_Bandwidth(bw);
+					lastBandWidth = bw;
+				}
 
 				// RF 信号の周波数を設定
 				long freq = pTuningParam->Frequency;
 				// IF周波数に変換
-				if (m_bRewriteIFFreq) {
+				if (pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_S_TMCC && m_bRewriteIFFreq) {
 					if (pTuningParam->Antenna.LNBSwitch != -1) {
 						if (pTuningParam->Frequency < pTuningParam->Antenna.LNBSwitch) {
 							if (pTuningParam->Frequency > pTuningParam->Antenna.LowOscillator && pTuningParam->Antenna.HighOscillator != -1)
@@ -386,7 +388,6 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam *pTuningParam)
 				failure = TRUE;
 				break;
 			}
-			OutputDebug(L"  Succeeded to IBDA_DeviceControl::CommitChanges() function.\n");
 		} while (0);
 		::LeaveCriticalSection(&m_CriticalSection);
 
@@ -394,56 +395,89 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam *pTuningParam)
 			return E_FAIL;
 		}
 
+		::EnterCriticalSection(&m_CriticalSection);
+		if (m_bRewriteNominalRate && pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_T_TMCC && m_nVID == 0x0511 && m_nPID == 0x024e) {
+			i2c_info I2C_SLVT = m_aI2c_slaves_mlt5pe[m_nTunerID].slvt;
+			i2c_info I2C_SLVX = m_aI2c_slaves_mlt5pe[m_nTunerID].slvx;
+
+			// Set SLV-T Bank : 0x10
+			it35_i2c_wr_reg(I2C_SLVT, 0x00, 0x10);
+			// TRCG Nominal Rate
+			it35_i2c_wr_regs(I2C_SLVT, 0x9F, m_byNominalRate_List, 5);
+			// Set SLV-T Bank : 0x00
+			it35_i2c_wr_reg(I2C_SLVT, 0x00, 0x00);
+		}
+
 		long tsid = pTuningParam->TSID == 0 ? -1L : pTuningParam->TSID;
-		static constexpr int CONFIRM_RETRY_TIME = 50;
-		unsigned int confirmRemain = m_nSpecialLockConfirmTime;
-		unsigned int tsidInterval = 0;
-		while (1) {
-			if (!tsidInterval) {
-				if (isISDBS) {
+		if (pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_S_TMCC) {
+			// TSIDをセット
+			hr = it35_PutISDBIoCtl(m_pIKsPropertySet, (DWORD)tsid);
+		}
+		if (pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_T_TMCC) {
+			hr = it35_PutOneSeg(m_pIKsPropertySet, FALSE);
+		}
+
+		// PID off
+		hr = it35_PutPidFilterOnOff(m_pIKsPropertySet, FALSE);
+
+		// PID Map
+		BDA_PID_MAP pidMap = { MEDIA_SAMPLE_CONTENT::MEDIA_TRANSPORT_PACKET, 1, { 0x1fff } };
+		hr = m_pIKsPropertySet->Set(KSPROPSETID_BdaPIDFilter, KSPROPERTY_BDA_PIDFILTER_MAP_PIDS, &pidMap, sizeof(pidMap), &pidMap, sizeof(pidMap));
+		::LeaveCriticalSection(&m_CriticalSection);
+
+		if (pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_S_TMCC) {
+			static constexpr int CONFIRM_RETRY_TIME = 100;
+			unsigned int confirmRemain = m_nSpecialLockConfirmTime;
+			unsigned int tsidInterval = max(m_nSpecialLockSetTSIDInterval, CONFIRM_RETRY_TIME);
+			int required = 2;
+			int count = 0;
+			while (1) {
+				unsigned int sleepTime = min(tsidInterval, min(confirmRemain, CONFIRM_RETRY_TIME));
+				if (!sleepTime) {
+					OutputDebug(L"  Timed out.\n");
+					break;
+				}
+				OutputDebug(L"    Waiting lock status remaining %d msec.\n", confirmRemain);
+				SleepWithMessageLoop((DWORD)sleepTime);
+
+				BOOLEAN sl = 0;
+				::EnterCriticalSection(&m_CriticalSection);
+				hr = m_pIBDA_SignalStatistics->get_SignalLocked(&sl);
+				::LeaveCriticalSection(&m_CriticalSection);
+				if (sl) {
+					count++;
+					if (count >= required) {
+						OutputDebug(L"  Lock success.\n");
+						success = TRUE;
+						break;
+					}
+				}
+				else {
+					count = 0;
+					confirmRemain -= sleepTime;
+					tsidInterval -= sleepTime;
+				}
+
+				if (!tsidInterval) {
+					tsidInterval = max(m_nSpecialLockSetTSIDInterval, CONFIRM_RETRY_TIME);
+
 					// TSIDをセット
 					::EnterCriticalSection(&m_CriticalSection);
 					hr = it35_PutISDBIoCtl(m_pIKsPropertySet, (DWORD)tsid);
 					::LeaveCriticalSection(&m_CriticalSection);
 				}
 
-				// PID off
-				::EnterCriticalSection(&m_CriticalSection);
-				hr = it35_PutPidFilterOnOff(m_pIKsPropertySet, FALSE);
-				::LeaveCriticalSection(&m_CriticalSection);
-
-				// PID Map
-				BDA_PID_MAP pidMap = { MEDIA_SAMPLE_CONTENT::MEDIA_TRANSPORT_PACKET, 1, { 0x1fff } };
-				::EnterCriticalSection(&m_CriticalSection);
-				hr = m_pIKsPropertySet->Set(KSPROPSETID_BdaPIDFilter, KSPROPERTY_BDA_PIDFILTER_MAP_PIDS, &pidMap, sizeof(pidMap), &pidMap, sizeof(pidMap));
-				::LeaveCriticalSection(&m_CriticalSection);
-
-				tsidInterval = max(m_nSpecialLockSetTSIDInterval, CONFIRM_RETRY_TIME);
 			}
-
-			BOOLEAN sl = 0;
-			::EnterCriticalSection(&m_CriticalSection);
-			hr = m_pIBDA_SignalStatistics->get_SignalLocked(&sl);
-			::LeaveCriticalSection(&m_CriticalSection);
-			if (sl) {
-				OutputDebug(L"  Lock success.\n");
-				success = TRUE;
-				break;
-			}
-			unsigned int sleepTime = min(tsidInterval, min(confirmRemain, CONFIRM_RETRY_TIME));
-			if (!sleepTime) {
-				OutputDebug(L"  Timed out.\n");
-				break;
-			}
-			OutputDebug(L"    Waiting lock status remaining %d msec.\n", confirmRemain);
-			SleepWithMessageLoop((DWORD)sleepTime);
-			confirmRemain -= sleepTime;
-			tsidInterval -= sleepTime;
+		}
+		else {
+			success = TRUE;
 		}
 
 		OutputDebug(L"LockChannel: Complete.\n");
 
 		return success ? S_OK : S_FALSE;
+	}
+
 	}
 
 	return E_NOINTERFACE;
@@ -469,7 +503,7 @@ const HRESULT CIT35Specials::ReadIniFile(const WCHAR *szIniFilePath)
 	IniFileAccess.SetSectionName(L"IT35");
 
 	// IF周波数で put_CarrierFrequency() を行う
-	m_bRewriteIFFreq = IniFileAccess.ReadKeyB(L"RewriteIFFreq", FALSE);
+	m_bRewriteIFFreq = IniFileAccess.ReadKeyB(L"RewriteIFFreq", m_bRewriteIFFreq);
 
 	// 固有の Property set を使用してTSIDの書込みを行うモード
 	m_nPrivateSetTSID = (enumPrivateSetTSID)IniFileAccess.ReadKeyIValueMap(L"PrivateSetTSID", enumPrivateSetTSID::ePrivateSetTSIDNone, mapPrivateSetTSID);
@@ -480,12 +514,28 @@ const HRESULT CIT35Specials::ReadIniFile(const WCHAR *szIniFilePath)
 	// Dual Mode ISDB Tuner
 	m_bDualModeISDB = IniFileAccess.ReadKeyB(L"DualModeISDB", FALSE);
 
-	// BDASpecial固有のLockChannelを使用する場合のLock完了確認時間
-	m_nSpecialLockConfirmTime = IniFileAccess.ReadKeyI(L"SpecialLockConfirmTime", 2000);
+	// BDASpecial固有のLockChannelを使用する場合のISDB-S Lock完了確認時間
+	m_nSpecialLockConfirmTime = IniFileAccess.ReadKeyI(L"SpecialLockConfirmTime", 4000);
 
-	// BDASpecial固有のLockChannelを使用する場合のLock完了待ち時にTSID / PID mapの再セットを行うインターバル時間
-	m_nSpecialLockSetTSIDInterval = IniFileAccess.ReadKeyI(L"SpecialLockSetTSIDInterval", 100);
+	// BDASpecial固有のLockChannelを使用する場合のISDB-S Lock完了待ち時にTSIDの再セットを行うインターバル時間
+	m_nSpecialLockSetTSIDInterval = IniFileAccess.ReadKeyI(L"SpecialLockSetTSIDInterval", 400);
 
+	// ISDB-T時、CXD2856にNominal Rateを再設定する
+	m_bRewriteNominalRate = IniFileAccess.ReadKeyB(L"RewriteNominalRate", FALSE);
+
+	if (m_bRewriteNominalRate) {
+		// ISDB-T時、CXD2856に設定するNominal Rate
+		std::wstring data;
+		data = IniFileAccess.ReadKeyS(L"NominalRate_List", L"0x17,0xA0,0x00,0x00,0x00");
+		// カンマ区切りで10個に分解
+		std::wstring tmp;
+		for (int n = 0; n < 5; n++) {
+			size_t p = common::WStringSplit(&data, L',', &tmp);
+			m_byNominalRate_List[n] = (BYTE)common::WStringToLong(tmp);
+			if (std::wstring::npos == p)
+				break;
+		}
+	}
 	return S_OK;
 }
 
@@ -550,6 +600,8 @@ const HRESULT CIT35Specials::PreLockChannel(TuningParam *pTuningParam)
 
 const HRESULT CIT35Specials::PreTuneRequest(const TuningParam *pTuningParam, ITuneRequest *pITuneRequest)
 {
+	static DWORD lastIsdbMode = -1;
+
 	if (m_nPrivateSetTSID == enumPrivateSetTSID::ePrivateSetTSIDSpecial)
 		return S_OK;
 
@@ -560,18 +612,26 @@ const HRESULT CIT35Specials::PreTuneRequest(const TuningParam *pTuningParam, ITu
 
 	// Dual Mode ISDB Tunerの場合はデモジュレーターの復調Modeを設定
 	if (m_bDualModeISDB) {
+		DWORD isdbMode = -1;
 		switch (pTuningParam->Modulation.Modulation) {
 		case BDA_MOD_ISDB_T_TMCC:
-			::EnterCriticalSection(&m_CriticalSection);
-			hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, PRIVATE_IO_CTL_FUNC_DEMOD_OFDM);
+			isdbMode = PRIVATE_IO_CTL_FUNC_DEMOD_OFDM;
 			::LeaveCriticalSection(&m_CriticalSection);
 			break;
 		case BDA_MOD_ISDB_S_TMCC:
-			::EnterCriticalSection(&m_CriticalSection);
-			hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, PRIVATE_IO_CTL_FUNC_DEMOD_PSK);
+			isdbMode = PRIVATE_IO_CTL_FUNC_DEMOD_PSK;
 			::LeaveCriticalSection(&m_CriticalSection);
 			break;
 		}
+		if (isdbMode != lastIsdbMode) {
+			::EnterCriticalSection(&m_CriticalSection);
+			hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, isdbMode);
+			::LeaveCriticalSection(&m_CriticalSection);
+		}
+		if (lastIsdbMode == -1) {
+			SleepWithMessageLoop(500);
+		}
+		lastIsdbMode = isdbMode;
 	}
 
 	// TSIDをSetする
@@ -594,11 +654,37 @@ const HRESULT CIT35Specials::PostTuneRequest(const TuningParam * pTuningParam)
 	HRESULT hr;
 
 	if (m_nPrivateSetTSID == enumPrivateSetTSID::ePrivateSetTSIDPostTR) {
-		// TSIDをSetする
-		if (pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_S_TMCC) {
 			::EnterCriticalSection(&m_CriticalSection);
+		if (m_bRewriteNominalRate && pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_T_TMCC && m_nVID == 0x0511 && m_nPID == 0x024e) {
+			i2c_info I2C_SLVT = m_aI2c_slaves_mlt5pe[m_nTunerID].slvt;
+			i2c_info I2C_SLVX = m_aI2c_slaves_mlt5pe[m_nTunerID].slvx;
+
+			// Set SLV-T Bank : 0x10
+			it35_i2c_wr_reg(I2C_SLVT, 0x00, 0x10);
+			// TRCG Nominal Rate
+			it35_i2c_wr_regs(I2C_SLVT, 0x9F, m_byNominalRate_List, 5);
+			// Set SLV-T Bank : 0x00
+			it35_i2c_wr_reg(I2C_SLVT, 0x00, 0x00);
+		}
+
+	// TSIDをSetする
+		if (pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_S_TMCC) {
 			hr = it35_PutISDBIoCtl(m_pIKsPropertySet, pTuningParam->TSID == 0 ? (DWORD)-1 : (DWORD)pTuningParam->TSID);
+		}
+
+		// OneSegモードをSetする
+		if (pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_T_TMCC) {
+			hr = it35_PutOneSeg(m_pIKsPropertySet, FALSE);
+		}
+
+		// PID off
+		hr = it35_PutPidFilterOnOff(m_pIKsPropertySet, FALSE);
+
+		// PID Map
+		BDA_PID_MAP pidMap = { MEDIA_SAMPLE_CONTENT::MEDIA_TRANSPORT_PACKET, 1, { 0x1fff } };
+		hr = m_pIKsPropertySet->Set(KSPROPSETID_BdaPIDFilter, KSPROPERTY_BDA_PIDFILTER_MAP_PIDS, &pidMap, sizeof(pidMap), &pidMap, sizeof(pidMap));
 			::LeaveCriticalSection(&m_CriticalSection);
+
 		}
 
 		// PID off
@@ -624,4 +710,213 @@ const HRESULT CIT35Specials::PostLockChannel(const TuningParam *pTuningParam)
 void CIT35Specials::Release(void)
 {
 	delete this;
+}
+
+WORD CIT35Specials::it35_checksum(const BYTE* buf, size_t len)
+{
+	size_t i;
+	WORD checksum = 0;
+
+	for (i = 1; i < len; i++) {
+		if (i % 2)
+			checksum += buf[i] << 8;
+		else
+			checksum += buf[i];
+	}
+	checksum = ~checksum;
+
+	return checksum;
+}
+
+void CIT35Specials::it35_create_msg(WORD cmd, const BYTE* wbuf, DWORD wlen, BYTE* msg, DWORD* mlen)
+{
+	static BYTE seq = 0;
+	WORD checksum;
+	DWORD len;
+
+	len = wlen + 4 + 2;
+
+	msg[0] = (BYTE)len - 1;
+	msg[1] = cmd >> 8;
+	msg[2] = cmd & 0xff;
+	msg[3] = seq++;
+	memcpy(msg + 4, wbuf, wlen);
+
+	*mlen = len;
+
+	checksum = it35_checksum(msg, len - 2);
+	msg[len - 2] = (checksum >> 8);
+	msg[len - 1] = (checksum & 0xff);
+
+	return;
+}
+
+int CIT35Specials::it35_tx_bulk_msg(WORD cmd, const BYTE* wbuf, DWORD wlen, BYTE* rbuf, DWORD* rlen)
+{
+	BYTE msg[256];
+	DWORD mlen;
+	HRESULT hr;
+
+	if (wlen > 250)
+		return -1;
+
+	it35_create_msg(cmd, wbuf, wlen, msg, &mlen);
+	BYTE seq = msg[3];
+
+	if (FAILED(hr = it35_SendBulkData(m_pIKsPropertySet, msg, mlen))) {
+		OutputDebug(L"it35_tx_bulk_msg:  Failed to it35_SendBulkData. cmd=0x%04x, hr=0x%08lx\n", cmd, hr);
+		return (int)hr;
+	}
+
+	if (cmd == CMD_FW_DL || cmd == CMD_FW_BOOT || cmd == CMD_1023) {
+		return 0;
+	}
+
+	mlen = 256;
+	if (FAILED(hr = it35_RcvBulkData(m_pIKsPropertySet, msg, &mlen))) {
+		OutputDebug(L"it35_tx_bulk_msg:  Failed to it35_RcvBulkData. cmd=0x%04x, hr=0x%08lx\n", cmd, hr);
+		return (int)hr;
+	}
+
+	WORD checksum = it35_checksum(msg, mlen - 2);
+	WORD tmp_checksum = (msg[mlen - 2] << 8) | msg[mlen - 1];
+	if (tmp_checksum != checksum) {
+		OutputDebug(L"it35_tx_bulk_msg:  Checksum mismatch. cmd=0x%04x, checksum=0x%04x:0x%04x\n", cmd, tmp_checksum, checksum);
+		return -1;
+	}
+
+	if (msg[1] != seq) {
+		OutputDebug(L"it35_tx_bulk_msg:  Sequence number mismatch. cmd=0x%04x, seq=0x%02x:0x%02x\n", cmd, msg[1], seq);
+		return -1;
+	}
+
+	BYTE status = msg[2];
+	if (status) {
+		if (cmd == CMD_IR_GET && status == 1)
+			return (int)status;
+
+		OutputDebug(L"it35_tx_bulk_msg:  Error returned. cmd=0x%04x, status=0x%02x\n", cmd, status);
+		return (int)status;
+	}
+
+	if (msg[1] == 4) {
+		if (rlen)
+			* rlen = 0;
+	}
+	else if (msg[1] > 4) {
+		DWORD l = 0;
+		if (rlen) {
+			l = *rlen;
+			*rlen = msg[1] - 4;
+		}
+		if (rbuf)
+			memcpy(msg + 3, rbuf, min((DWORD)msg[1] - 4, l));
+	}
+
+	return (int)status;
+}
+
+int CIT35Specials::it35_i2c_wr(BYTE i2c_bus, BYTE i2c_addr, BYTE reg, BYTE* data, DWORD len)
+{
+	BYTE buf[256] = {};
+	buf[0] = (BYTE)len + 1;
+	buf[1] = i2c_bus;
+	buf[2] = i2c_addr << 1;
+	buf[3] = reg;
+	if (len)
+		memcpy(buf + 4, data, len);
+
+	return it35_tx_bulk_msg(CMD_GENERIC_I2C_WR, buf, len + 4, NULL, NULL);
+}
+
+int CIT35Specials::it35_i2c_rd(BYTE i2c_bus, BYTE i2c_addr, BYTE* data, DWORD* len)
+{
+	if (!data || !len || *len < 1)
+		return -1;
+
+	BYTE buf[256] = {};
+	buf[0] = (BYTE)*len;
+	buf[1] = i2c_bus;
+	buf[2] = i2c_addr << 1;
+
+	return it35_tx_bulk_msg(CMD_GENERIC_I2C_RD, buf, 3, data, len);
+}
+
+int CIT35Specials::it35_mem_wr_regs(DWORD reg, BYTE* data, DWORD len)
+{
+	BYTE buf[256] = {};
+	buf[0] = (BYTE)len;
+	buf[1] = 0;
+	buf[2] = 0;
+	buf[3] = (reg & 0xff00) >> 8;
+	buf[4] = reg & 0xff;
+	memcpy(buf + 5, data, len);
+
+	return it35_tx_bulk_msg(CMD_MEM_WR, buf, len + 5, NULL, NULL);
+}
+
+int CIT35Specials::it35_mem_wr_reg(DWORD reg, BYTE data)
+{
+	BYTE temp = data;
+
+	return it35_mem_wr_regs(reg, &temp, 1);
+}
+
+int CIT35Specials::it35_mem_rd_regs(DWORD reg, BYTE* data, DWORD* len)
+{
+	if (!data || !len || *len < 1)
+		return -1;
+
+	BYTE buf[256] = {};
+	buf[0] = (BYTE)*len;
+	buf[1] = 0;
+	buf[2] = 0;
+	buf[3] = (reg & 0xff00) >> 8;
+	buf[4] = reg & 0xff;
+
+	return it35_tx_bulk_msg(CMD_MEM_RD, buf, 5, data, len);
+}
+
+int CIT35Specials::it35_mem_rd_reg(DWORD reg, BYTE* data)
+{
+	return it35_mem_wr_regs(reg, data, 1);
+}
+
+int CIT35Specials::it35_i2c_wr_regs(i2c_info slaves, BYTE reg, BYTE* data, DWORD len)
+{
+	return it35_i2c_wr(slaves.bus, slaves.addr, reg, data, len);
+}
+
+int CIT35Specials::it35_i2c_wr_reg(i2c_info slaves, BYTE reg, BYTE data)
+{
+	BYTE temp = data;
+
+	return it35_i2c_wr_regs(slaves, reg, &temp, 1);
+}
+
+int CIT35Specials::it35_i2c_rd_reg(i2c_info slaves, BYTE reg, BYTE* data)
+{
+	it35_mem_wr_reg(0xf424, 1);
+
+	it35_i2c_wr(slaves.bus, slaves.addr, reg, NULL, 0);
+
+	it35_mem_wr_reg(0xf424, 0);
+
+	DWORD temp = 1;
+	return it35_i2c_rd(slaves.bus, slaves.addr, data, &temp);
+}
+
+int CIT35Specials::it35_i2c_set_reg_bits(i2c_info slaves, BYTE reg, BYTE data, BYTE mask)
+{
+	int res;
+	BYTE rdata;
+
+	if (mask != 0xff) {
+		res = it35_i2c_rd_reg(slaves, reg, &rdata);
+		if (res)
+			return res;
+		data = ((data & mask) | (rdata & (mask ^ 0xFF)));
+	}
+
+	return it35_i2c_wr_reg(slaves, reg, data);
 }
