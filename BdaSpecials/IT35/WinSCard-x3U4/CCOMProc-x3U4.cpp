@@ -24,8 +24,7 @@ CCOMProc::CCOMProc(void)
 	hThreadInitComp(NULL),
 	hReqEvent(NULL),
 	hEndEvent(NULL),
-	hTerminateRequest(NULL),
-	PowerMode(enumTunerPowerMode::eTunerPowerModeAuto)
+	hTerminateRequest(NULL)
 {
 	hThreadInitComp = ::CreateEvent(NULL, FALSE, FALSE, NULL);
 	hReqEvent = ::CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -52,10 +51,9 @@ CCOMProc::~CCOMProc(void)
 	return;
 };
 
-void CCOMProc::SetTunerFriendlyName(std::wstring friendlyName, std::wstring instancePath, enumTunerPowerMode powerMode) {
+void CCOMProc::SetTunerFriendlyName(std::wstring friendlyName, std::wstring instancePath) {
 	TunerFriendlyName = friendlyName;
 	TunerInstancePath = common::WStringToUpperCase(instancePath);
-	PowerMode = powerMode;
 
 	return;
 };
@@ -404,9 +402,7 @@ DWORD WINAPI CCOMProc::COMProcThread(LPVOID lpParameter)
 			// これをやっておかないと、Bondriverがチューナーをオープンしている時しか CARD にアクセスできない
 			hr = it35_DigibestPrivateIoControl(pIKsPropertySet, PRIVATE_IO_CTL_FUNC_TUNER_POWER_MODE_MANUAL);
 			hr = it35_DigibestPrivateIoControl(pIKsPropertySet, PRIVATE_IO_CTL_FUNC_SET_TUNER_POWER_ON);
-			if (pCOMProc->PowerMode == enumTunerPowerMode::eTunerPowerModeAuto) {
 			hr = it35_DigibestPrivateIoControl(pIKsPropertySet, PRIVATE_IO_CTL_FUNC_TUNER_POWER_MODE_AUTO);
-			}
 
 			// チューナーのGUIDを保存
 			pCOMProc->TunerDisplayName = guid;
