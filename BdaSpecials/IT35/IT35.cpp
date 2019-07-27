@@ -10,6 +10,7 @@
 
 #include <Windows.h>
 #include <string>
+#include <algorithm>
 
 #include <dshow.h>
 
@@ -52,8 +53,14 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 
 __declspec(dllexport) IBdaSpecials * CreateBdaSpecials(CComPtr<IBaseFilter> pTunerDevice)
 {
-	return new CIT35Specials(hMySelf, pTunerDevice);
+	return NULL;
 }
+
+__declspec(dllexport) IBdaSpecials* CreateBdaSpecials2(CComPtr<IBaseFilter> pTunerDevice, CComPtr<IBaseFilter> pCaptureDevice, const WCHAR* szTunerDisplayName, const WCHAR* szTunerFriendlyName, const WCHAR* szCaptureDisplayName, const WCHAR* szCaptureFriendlyName)
+{
+	return new CIT35Specials(hMySelf, pTunerDevice, szTunerDisplayName);
+}
+
 
 __declspec(dllexport) HRESULT CheckAndInitTuner(IBaseFilter *pTunerDevice, const WCHAR *szDisplayName, const WCHAR *szFriendlyName, const WCHAR *szIniFilePath)
 {
@@ -79,10 +86,12 @@ __declspec(dllexport) HRESULT CheckCapture(const WCHAR *szTunerDisplayName, cons
 	return E_FAIL;
 }
 
-CIT35Specials::CIT35Specials(HMODULE hMySelf, CComPtr<IBaseFilter> pTunerDevice)
+CIT35Specials::CIT35Specials(HMODULE hMySelf, CComPtr<IBaseFilter> pTunerDevice, const WCHAR* szTunerDisplayName)
 	: m_hMySelf(hMySelf),
 	  m_pTunerDevice(pTunerDevice),
 	  m_pIKsPropertySet(m_pTunerDevice),
+	  m_hSemaphore(NULL),
+	  m_sTunerGUID(szTunerDisplayName),
 	  m_bRewriteIFFreq(TRUE),
 	  m_nPrivateSetTSID(enumPrivateSetTSID::ePrivateSetTSIDNone),
 	  m_nVID(-1),
@@ -104,6 +113,7 @@ CIT35Specials::~CIT35Specials()
 {
 	m_hMySelf = NULL;
 
+	SAFE_CLOSE_HANDLE(m_hSemaphore);
 	::DeleteCriticalSection(&m_CriticalSection);
 
 	return;
@@ -210,6 +220,25 @@ const HRESULT CIT35Specials::InitializeHook(void)
 		OutputDebug(L"  Driver PID=0x%08x, Driver Version=0x%08x, Tuner ID=0x%08x.\n",
 			drvData.DriverInfo.DriverPID, drvData.DriverInfo.DriverVersion, drvData.DriverInfo.TunerID);
 		m_nTunerID = drvData.DriverInfo.TunerID;
+	}
+
+	// プロセス間排他用のセマフォ作成
+	std::wstring::size_type len = m_sTunerGUID.find_last_of(L"#");
+	std::wstring str = m_sTunerGUID.substr(0, len);
+	std::replace(str.begin(), str.end(), L'\\', L'/');
+	std::wstring semname1 = L"Global\\IT35-BulkMsg_Lock" + str;
+	std::wstring semname2 = L"Local\\IT35-BulkMsg_Lock" + str;
+	m_hSemaphore = ::CreateSemaphoreW(NULL, 1, 1, semname1.c_str());
+	if (!m_hSemaphore) {
+		OutputDebug(L"Warning! Failed to creating Semaphore Object for Global Namespace. Trying OpenSemaphore().\n");
+		m_hSemaphore = ::OpenSemaphoreW(SEMAPHORE_ALL_ACCESS, FALSE, semname1.c_str());
+		if (!m_hSemaphore) {
+			OutputDebug(L"Warning! Failed to opening Semaphore Object for Global Namespace. Trying Session Namespace.\n");
+			m_hSemaphore = ::CreateSemaphoreW(NULL, 1, 1, semname2.c_str());
+			if (!m_hSemaphore) {
+				OutputDebug(L"Error! Failed to creating Semaphore Object for Session Namespace.\n");
+			}
+		}
 	}
 
 	if (m_bLNBPowerON) {
@@ -399,20 +428,31 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam *pTuningParam)
 		if (m_bRewriteNominalRate && pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_T_TMCC && m_nVID == 0x0511 && m_nPID == 0x024e) {
 			i2c_info I2C_SLVT = m_aI2c_slaves_mlt5pe[m_nTunerID].slvt;
 			i2c_info I2C_SLVX = m_aI2c_slaves_mlt5pe[m_nTunerID].slvx;
+			i2c_info I2C_HELENE = m_aI2c_slaves_mlt5pe[m_nTunerID].gate;
+
+			LockProc Lock(&m_hSemaphore);
 
 			// Set SLV-T Bank : 0x10
 			it35_i2c_wr_reg(I2C_SLVT, 0x00, 0x10);
+
 			// TRCG Nominal Rate
 			it35_i2c_wr_regs(I2C_SLVT, 0x9F, m_byNominalRate_List, 5);
+
 			// Set SLV-T Bank : 0x00
 			it35_i2c_wr_reg(I2C_SLVT, 0x00, 0x00);
+
+			// SW Reset
+			it35_i2c_wr_reg(I2C_SLVT, 0xFE, 0x01);
+			// Enable TS Output
+			it35_i2c_wr_reg(I2C_SLVT, 0xC3, 0x00);
 		}
 
-		long tsid = pTuningParam->TSID == 0 ? -1L : pTuningParam->TSID;
+		// TSIDをSetする
 		if (pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_S_TMCC) {
-			// TSIDをセット
-			hr = it35_PutISDBIoCtl(m_pIKsPropertySet, (DWORD)tsid);
+			hr = it35_PutISDBIoCtl(m_pIKsPropertySet, pTuningParam->TSID == 0 ? (DWORD)-1 : (DWORD)pTuningParam->TSID);
 		}
+
+		// OneSegモードをSetする
 		if (pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_T_TMCC) {
 			hr = it35_PutOneSeg(m_pIKsPropertySet, FALSE);
 		}
@@ -425,52 +465,70 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam *pTuningParam)
 		hr = m_pIKsPropertySet->Set(KSPROPSETID_BdaPIDFilter, KSPROPERTY_BDA_PIDFILTER_MAP_PIDS, &pidMap, sizeof(pidMap), &pidMap, sizeof(pidMap));
 		::LeaveCriticalSection(&m_CriticalSection);
 
-		if (pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_S_TMCC) {
-			static constexpr int CONFIRM_RETRY_TIME = 100;
-			unsigned int confirmRemain = m_nSpecialLockConfirmTime;
-			unsigned int tsidInterval = max(m_nSpecialLockSetTSIDInterval, CONFIRM_RETRY_TIME);
-			int required = 2;
-			int count = 0;
-			while (1) {
-				unsigned int sleepTime = min(tsidInterval, min(confirmRemain, CONFIRM_RETRY_TIME));
-				if (!sleepTime) {
-					OutputDebug(L"  Timed out.\n");
+		static constexpr int CONFIRM_RETRY_TIME = 100;
+		unsigned int confirmRemain = m_nSpecialLockConfirmTime;
+		unsigned int tsidInterval = max(m_nSpecialLockSetTSIDInterval, CONFIRM_RETRY_TIME);
+		while (1) {
+			unsigned int sleepTime = min(tsidInterval, min(confirmRemain, CONFIRM_RETRY_TIME));
+			if (!sleepTime) {
+				OutputDebug(L"  Timed out.\n");
+				break;
+			}
+			OutputDebug(L"    Waiting lock status remaining %d msec.\n", confirmRemain);
+			SleepWithMessageLoop((DWORD)sleepTime);
+
+			BOOLEAN sl = 0;
+
+			if (m_bRewriteNominalRate && pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_T_TMCC && m_nVID == 0x0511 && m_nPID == 0x024e) {
+				i2c_info I2C_SLVT = m_aI2c_slaves_mlt5pe[m_nTunerID].slvt;
+
+				BYTE rdata = 0;
+
+				{
+					LockProc Lock(&m_hSemaphore);
+					::EnterCriticalSection(&m_CriticalSection);
+					// Set SLV-T Bank : 0x60
+					it35_i2c_wr_reg(I2C_SLVT, 0x00, 0x60);
+					// Read reg:0x10
+					it35_i2c_rd_reg(I2C_SLVT, 0x10, &rdata);
+					::LeaveCriticalSection(&m_CriticalSection);
+				}
+				if (rdata & 0x10) {
+					OutputDebug(L"  Unlock.\n");
 					break;
 				}
-				OutputDebug(L"    Waiting lock status remaining %d msec.\n", confirmRemain);
-				SleepWithMessageLoop((DWORD)sleepTime);
-
-				BOOLEAN sl = 0;
+				if (rdata & 0x01) {
+					OutputDebug(L"  Lock.\n");
+					sl = TRUE;
+				}
+				if (rdata & 0x02) {
+					OutputDebug(L"  Sync.\n");
+					sl = TRUE;
+				}
+			}
+			else {
 				::EnterCriticalSection(&m_CriticalSection);
 				hr = m_pIBDA_SignalStatistics->get_SignalLocked(&sl);
 				::LeaveCriticalSection(&m_CriticalSection);
-				if (sl) {
-					count++;
-					if (count >= required) {
-						OutputDebug(L"  Lock success.\n");
-						success = TRUE;
-						break;
-					}
-				}
-				else {
-					count = 0;
-					confirmRemain -= sleepTime;
-					tsidInterval -= sleepTime;
-				}
+			}
+			if (sl) {
+				OutputDebug(L"  Lock success.\n");
+				success = TRUE;
+				break;
+			}
+			confirmRemain -= sleepTime;
+			tsidInterval -= sleepTime;
 
-				if (!tsidInterval) {
-					tsidInterval = max(m_nSpecialLockSetTSIDInterval, CONFIRM_RETRY_TIME);
+			if (!tsidInterval) {
+				tsidInterval = max(m_nSpecialLockSetTSIDInterval, CONFIRM_RETRY_TIME);
 
-					// TSIDをセット
+				// TSIDをSetする
+				if (pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_S_TMCC) {
 					::EnterCriticalSection(&m_CriticalSection);
-					hr = it35_PutISDBIoCtl(m_pIKsPropertySet, (DWORD)tsid);
+					hr = it35_PutISDBIoCtl(m_pIKsPropertySet, pTuningParam->TSID == 0 ? (DWORD)-1 : (DWORD)pTuningParam->TSID);
 					::LeaveCriticalSection(&m_CriticalSection);
 				}
-
 			}
-		}
-		else {
-			success = TRUE;
 		}
 
 		OutputDebug(L"LockChannel: Complete.\n");
@@ -525,7 +583,7 @@ const HRESULT CIT35Specials::ReadIniFile(const WCHAR *szIniFilePath)
 		// ISDB-T時、CXD2856に設定するNominal Rate
 		std::wstring data;
 		data = IniFileAccess.ReadKeyS(L"NominalRate_List", L"0x17,0xA0,0x00,0x00,0x00");
-		// カンマ区切りで10個に分解
+		// カンマ区切りで5個に分解
 		std::wstring tmp;
 		for (int n = 0; n < 5; n++) {
 			size_t p = common::WStringSplit(&data, L',', &tmp);
@@ -567,30 +625,30 @@ const HRESULT CIT35Specials::PreLockChannel(TuningParam *pTuningParam)
 			pTuningParam->Modulation.BandWidth = 9L;
 		}
 
-	// IF周波数に変換
-	if (m_bRewriteIFFreq) {
-		long freq = pTuningParam->Frequency;
-		if (pTuningParam->Antenna.LNBSwitch != -1) {
-			if (pTuningParam->Frequency < pTuningParam->Antenna.LNBSwitch) {
-				if (pTuningParam->Frequency > pTuningParam->Antenna.LowOscillator && pTuningParam->Antenna.HighOscillator != -1)
-					pTuningParam->Frequency -= pTuningParam->Antenna.LowOscillator;
+		// IF周波数に変換
+		if (m_bRewriteIFFreq) {
+			long freq = pTuningParam->Frequency;
+			if (pTuningParam->Antenna.LNBSwitch != -1) {
+				if (pTuningParam->Frequency < pTuningParam->Antenna.LNBSwitch) {
+					if (pTuningParam->Frequency > pTuningParam->Antenna.LowOscillator && pTuningParam->Antenna.HighOscillator != -1)
+						pTuningParam->Frequency -= pTuningParam->Antenna.LowOscillator;
+				}
+				else {
+					if (pTuningParam->Frequency > pTuningParam->Antenna.HighOscillator && pTuningParam->Antenna.HighOscillator != -1)
+						pTuningParam->Frequency -= pTuningParam->Antenna.HighOscillator;
+				}
 			}
 			else {
-				if (pTuningParam->Frequency > pTuningParam->Antenna.HighOscillator && pTuningParam->Antenna.HighOscillator != -1)
-					pTuningParam->Frequency -= pTuningParam->Antenna.HighOscillator;
+				if (pTuningParam->Antenna.Tone == 0) {
+					if (pTuningParam->Frequency > pTuningParam->Antenna.LowOscillator && pTuningParam->Antenna.HighOscillator != -1)
+						pTuningParam->Frequency -= pTuningParam->Antenna.LowOscillator;
+				}
+				else {
+					if (pTuningParam->Frequency > pTuningParam->Antenna.HighOscillator && pTuningParam->Antenna.HighOscillator != -1)
+						pTuningParam->Frequency -= pTuningParam->Antenna.HighOscillator;
+				}
 			}
 		}
-		else {
-			if (pTuningParam->Antenna.Tone == 0) {
-				if (pTuningParam->Frequency > pTuningParam->Antenna.LowOscillator && pTuningParam->Antenna.HighOscillator != -1)
-					pTuningParam->Frequency -= pTuningParam->Antenna.LowOscillator;
-			}
-			else {
-				if (pTuningParam->Frequency > pTuningParam->Antenna.HighOscillator && pTuningParam->Antenna.HighOscillator != -1)
-					pTuningParam->Frequency -= pTuningParam->Antenna.HighOscillator;
-			}
-		}
-	}
 	}
 
 	return S_OK;
@@ -654,18 +712,28 @@ const HRESULT CIT35Specials::PostTuneRequest(const TuningParam * pTuningParam)
 		if (m_bRewriteNominalRate && pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_T_TMCC && m_nVID == 0x0511 && m_nPID == 0x024e) {
 			i2c_info I2C_SLVT = m_aI2c_slaves_mlt5pe[m_nTunerID].slvt;
 			i2c_info I2C_SLVX = m_aI2c_slaves_mlt5pe[m_nTunerID].slvx;
+			i2c_info I2C_HELENE = m_aI2c_slaves_mlt5pe[m_nTunerID].gate;
+
+			LockProc Lock(&m_hSemaphore);
 
 			// Set SLV-T Bank : 0x10
 			it35_i2c_wr_reg(I2C_SLVT, 0x00, 0x10);
+
 			// TRCG Nominal Rate
 			it35_i2c_wr_regs(I2C_SLVT, 0x9F, m_byNominalRate_List, 5);
+
 			// Set SLV-T Bank : 0x00
 			it35_i2c_wr_reg(I2C_SLVT, 0x00, 0x00);
+
+			// SW Reset
+			it35_i2c_wr_reg(I2C_SLVT, 0xFE, 0x01);
+			// Enable TS Output
+			it35_i2c_wr_reg(I2C_SLVT, 0xC3, 0x00);
 		}
 
-	// TSIDをSetする
+		// TSIDをSetする
 		if (pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_S_TMCC) {
-		hr = it35_PutISDBIoCtl(m_pIKsPropertySet, pTuningParam->TSID == 0 ? (DWORD)-1 : (DWORD)pTuningParam->TSID);
+			hr = it35_PutISDBIoCtl(m_pIKsPropertySet, pTuningParam->TSID == 0 ? (DWORD)-1 : (DWORD)pTuningParam->TSID);
 		}
 
 		// OneSegモードをSetする
@@ -794,7 +862,7 @@ int CIT35Specials::it35_tx_bulk_msg(WORD cmd, const BYTE* wbuf, DWORD wlen, BYTE
 			*rlen = msg[1] - 4;
 		}
 		if (rbuf)
-			memcpy(msg + 3, rbuf, min((DWORD)msg[1] - 4, l));
+			memcpy(rbuf, msg + 3, min((DWORD)msg[1] - 4, l));
 	}
 
 	return (int)status;
@@ -904,3 +972,32 @@ int CIT35Specials::it35_i2c_set_reg_bits(i2c_info slaves, BYTE reg, BYTE data, B
 
 	return it35_i2c_wr_reg(slaves, reg, data);
 }
+
+LockProc::LockProc(HANDLE* pHandle, DWORD dwMilliSeconds)
+	: result(WAIT_FAILED),
+	  pSemaphore(pHandle)
+{
+	if (pSemaphore) {
+		result = ::WaitForSingleObject(*pSemaphore, dwMilliSeconds);
+	}
+	return;
+};
+
+LockProc::LockProc(HANDLE* pHandle)
+	: LockProc(pHandle, 10000)
+{
+};
+
+LockProc::~LockProc(void)
+{
+	if (pSemaphore) {
+		::ReleaseSemaphore(*pSemaphore, 1, NULL);
+	}
+	return;
+};
+
+BOOL LockProc::IsSuccess(void)
+{
+	return (result == WAIT_OBJECT_0);
+};
+

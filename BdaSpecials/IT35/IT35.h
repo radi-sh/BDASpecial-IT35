@@ -5,7 +5,7 @@
 class CIT35Specials : public IBdaSpecials2b4
 {
 public:
-	CIT35Specials(HMODULE hMySelf, CComPtr<IBaseFilter> pTunerDevice);
+	CIT35Specials(HMODULE hMySelf, CComPtr<IBaseFilter> pTunerDevice, const WCHAR* szTunerDisplayName);
 	virtual ~CIT35Specials(void);
 
 	const HRESULT InitializeHook(void);
@@ -41,12 +41,14 @@ private:
 	CComPtr<IBDA_DigitalDemodulator> m_pIBDA_DigitalDemodulator;		// IBDA_DigitalDemodulator (Output Pin, Node 1)
 	CComPtr<IBDA_DeviceControl> m_pIBDA_DeviceControl;					// IBDA_DeviceControl (Tuner)
 	CRITICAL_SECTION m_CriticalSection;
+	HANDLE m_hSemaphore;												// プロセス間排他用
+	std::wstring m_sTunerGUID;											// TunerのGUID
 
 	// 固有の Property set を使用してTSIDの書込みを行うモード
 	enum enumPrivateSetTSID {
-		ePrivateSetTSIDNone = 0,			// 行わない
-		ePrivateSetTSIDPreTR,				// PreTuneRequestで行う
-		ePrivateSetTSIDPostTR,				// PostTuneRequestで行う
+		ePrivateSetTSIDNone = 0,				// 行わない
+		ePrivateSetTSIDPreTR,					// PreTuneRequestで行う
+		ePrivateSetTSIDPostTR,					// PostTuneRequestで行う
 		ePrivateSetTSIDSpecial = 100,			// 全てのチューニング操作をLockChannelで行う
 	};
 
@@ -91,10 +93,10 @@ private:
 	WORD m_nVID;
 	WORD m_nPID;
 	DWORD m_nTunerID;
-	BOOL m_bRewriteIFFreq;					// IF周波数で put_CarrierFrequency() を行う
-	enumPrivateSetTSID m_nPrivateSetTSID;	// 固有の Property set を使用してTSIDの書込みを行うモード
-	BOOL m_bLNBPowerON;						// LNB電源の供給をONする
-	BOOL m_bDualModeISDB;					// Dual Mode ISDB Tuner
+	BOOL m_bRewriteIFFreq;						// IF周波数で put_CarrierFrequency() を行う
+	enumPrivateSetTSID m_nPrivateSetTSID;		// 固有の Property set を使用してTSIDの書込みを行うモード
+	BOOL m_bLNBPowerON;							// LNB電源の供給をONする
+	BOOL m_bDualModeISDB;						// Dual Mode ISDB Tuner
 	unsigned int m_nSpecialLockConfirmTime;		// BDASpecial固有のLockChannelを使用する場合のISDB-S Lock完了確認時間
 	unsigned int m_nSpecialLockSetTSIDInterval;	// BDASpecial固有のLockChannelを使用する場合のISDB-S Lock完了待ち時にTSIDの再セットを行うインターバル時間
 	BOOL m_bRewriteNominalRate;					// ISDB-T時、CXD2856にNominal Rateを再設定する
@@ -114,4 +116,16 @@ private:
 	int it35_i2c_wr_reg(i2c_info slaves, BYTE reg, BYTE data);
 	int it35_i2c_rd_reg(i2c_info slaves, BYTE reg, BYTE *data);
 	int it35_i2c_set_reg_bits(i2c_info slaves, BYTE reg, BYTE data, BYTE mask);
+};
+
+class LockProc {
+private:
+	HANDLE* pSemaphore;
+	DWORD result;
+
+public:
+	LockProc(HANDLE* pHandle, DWORD dwMilliSeconds);
+	LockProc(HANDLE* pHandle);
+	~LockProc(void);
+	BOOL IsSuccess(void);
 };
