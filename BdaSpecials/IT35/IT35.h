@@ -114,7 +114,8 @@ private:
 	int it35_mem_rd_reg(DWORD reg, BYTE* data);
 	int it35_i2c_wr_regs(i2c_info slaves, BYTE reg, BYTE* data, DWORD len);
 	int it35_i2c_wr_reg(i2c_info slaves, BYTE reg, BYTE data);
-	int it35_i2c_rd_reg(i2c_info slaves, BYTE reg, BYTE *data);
+	int it35_i2c_rd_regs(i2c_info slaves, BYTE reg, BYTE* data, DWORD len);
+	int it35_i2c_rd_reg(i2c_info slaves, BYTE reg, BYTE* data);
 	int it35_i2c_set_reg_bits(i2c_info slaves, BYTE reg, BYTE data, BYTE mask);
 };
 

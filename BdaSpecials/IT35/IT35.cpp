@@ -946,7 +946,7 @@ int CIT35Specials::it35_i2c_wr_reg(i2c_info slaves, BYTE reg, BYTE data)
 	return it35_i2c_wr_regs(slaves, reg, &temp, 1);
 }
 
-int CIT35Specials::it35_i2c_rd_reg(i2c_info slaves, BYTE reg, BYTE* data)
+int CIT35Specials::it35_i2c_rd_regs(i2c_info slaves, BYTE reg, BYTE* data, DWORD len)
 {
 	it35_mem_wr_reg(0xf424, 1);
 
@@ -954,8 +954,12 @@ int CIT35Specials::it35_i2c_rd_reg(i2c_info slaves, BYTE reg, BYTE* data)
 
 	it35_mem_wr_reg(0xf424, 0);
 
-	DWORD temp = 1;
-	return it35_i2c_rd(slaves.bus, slaves.addr, data, &temp);
+	return it35_i2c_rd(slaves.bus, slaves.addr, data, &len);
+}
+
+int CIT35Specials::it35_i2c_rd_reg(i2c_info slaves, BYTE reg, BYTE* data)
+{
+	return it35_i2c_rd_regs(slaves, reg, data, 1);
 }
 
 int CIT35Specials::it35_i2c_set_reg_bits(i2c_info slaves, BYTE reg, BYTE data, BYTE mask)
