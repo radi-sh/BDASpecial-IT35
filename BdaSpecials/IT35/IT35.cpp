@@ -436,15 +436,15 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam *pTuningParam)
 			it35_i2c_wr_reg(I2C_SLVT, 0x00, 0x10);
 
 			// TRCG Nominal Rate
-			it35_i2c_wr_regs(I2C_SLVT, 0x9F, m_byNominalRate_List, 5);
+			it35_i2c_wr_regs(I2C_SLVT, 0x9f, m_byNominalRate_List, 5);
 
 			// Set SLV-T Bank : 0x00
 			it35_i2c_wr_reg(I2C_SLVT, 0x00, 0x00);
 
 			// SW Reset
-			it35_i2c_wr_reg(I2C_SLVT, 0xFE, 0x01);
+			it35_i2c_wr_reg(I2C_SLVT, 0xfe, 0x01);
 			// Enable TS Output
-			it35_i2c_wr_reg(I2C_SLVT, 0xC3, 0x00);
+			it35_i2c_wr_reg(I2C_SLVT, 0xc3, 0x00);
 		}
 
 		// TSID‚ðSet‚·‚é
@@ -484,15 +484,15 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam *pTuningParam)
 
 				BYTE rdata = 0;
 
+				::EnterCriticalSection(&m_CriticalSection);
 				{
 					LockProc Lock(&m_hSemaphore);
-					::EnterCriticalSection(&m_CriticalSection);
 					// Set SLV-T Bank : 0x60
 					it35_i2c_wr_reg(I2C_SLVT, 0x00, 0x60);
 					// Read reg:0x10
 					it35_i2c_rd_reg(I2C_SLVT, 0x10, &rdata);
-					::LeaveCriticalSection(&m_CriticalSection);
 				}
+				::LeaveCriticalSection(&m_CriticalSection);
 				if (rdata & 0x10) {
 					OutputDebug(L"  Unlock.\n");
 					break;
@@ -720,15 +720,15 @@ const HRESULT CIT35Specials::PostTuneRequest(const TuningParam * pTuningParam)
 			it35_i2c_wr_reg(I2C_SLVT, 0x00, 0x10);
 
 			// TRCG Nominal Rate
-			it35_i2c_wr_regs(I2C_SLVT, 0x9F, m_byNominalRate_List, 5);
+			it35_i2c_wr_regs(I2C_SLVT, 0x9f, m_byNominalRate_List, 5);
 
 			// Set SLV-T Bank : 0x00
 			it35_i2c_wr_reg(I2C_SLVT, 0x00, 0x00);
 
 			// SW Reset
-			it35_i2c_wr_reg(I2C_SLVT, 0xFE, 0x01);
+			it35_i2c_wr_reg(I2C_SLVT, 0xfe, 0x01);
 			// Enable TS Output
-			it35_i2c_wr_reg(I2C_SLVT, 0xC3, 0x00);
+			it35_i2c_wr_reg(I2C_SLVT, 0xc3, 0x00);
 		}
 
 		// TSID‚ðSet‚·‚é
@@ -805,7 +805,7 @@ void CIT35Specials::it35_create_msg(WORD cmd, const BYTE* wbuf, DWORD wlen, BYTE
 
 int CIT35Specials::it35_tx_bulk_msg(WORD cmd, const BYTE* wbuf, DWORD wlen, BYTE* rbuf, DWORD* rlen)
 {
-	BYTE msg[256];
+	BYTE msg[256] = {};
 	DWORD mlen;
 	HRESULT hr;
 
@@ -870,11 +870,15 @@ int CIT35Specials::it35_tx_bulk_msg(WORD cmd, const BYTE* wbuf, DWORD wlen, BYTE
 
 int CIT35Specials::it35_i2c_wr(BYTE i2c_bus, BYTE i2c_addr, BYTE reg, BYTE* data, DWORD len)
 {
-	BYTE buf[256] = {};
-	buf[0] = (BYTE)len + 1;
-	buf[1] = i2c_bus;
-	buf[2] = i2c_addr << 1;
-	buf[3] = reg;
+	if (len > 246)
+		return -1;
+
+	BYTE buf[256] = {
+		(BYTE)len + 1,
+		i2c_bus,
+		i2c_addr << 1,
+		reg,
+	};
 	if (len)
 		memcpy(buf + 4, data, len);
 
@@ -886,22 +890,27 @@ int CIT35Specials::it35_i2c_rd(BYTE i2c_bus, BYTE i2c_addr, BYTE* data, DWORD* l
 	if (!data || !len || *len < 1)
 		return -1;
 
-	BYTE buf[256] = {};
-	buf[0] = (BYTE)*len;
-	buf[1] = i2c_bus;
-	buf[2] = i2c_addr << 1;
+	BYTE buf[256] = {
+		(BYTE)* len,
+		i2c_bus,
+		(i2c_addr << 1) | 0x01,
+	};
 
 	return it35_tx_bulk_msg(CMD_GENERIC_I2C_RD, buf, 3, data, len);
 }
 
 int CIT35Specials::it35_mem_wr_regs(DWORD reg, BYTE* data, DWORD len)
 {
-	BYTE buf[256] = {};
-	buf[0] = (BYTE)len;
-	buf[1] = 0;
-	buf[2] = 0;
-	buf[3] = (reg & 0xff00) >> 8;
-	buf[4] = reg & 0xff;
+	if (len > 245)
+		return -1;
+
+	BYTE buf[256] = {
+		(BYTE)len,
+		0x00,
+		0x00,
+		(reg & 0xff00) >> 8,
+		reg & 0xff,
+	};
 	memcpy(buf + 5, data, len);
 
 	return it35_tx_bulk_msg(CMD_MEM_WR, buf, len + 5, NULL, NULL);
@@ -919,12 +928,13 @@ int CIT35Specials::it35_mem_rd_regs(DWORD reg, BYTE* data, DWORD* len)
 	if (!data || !len || *len < 1)
 		return -1;
 
-	BYTE buf[256] = {};
-	buf[0] = (BYTE)*len;
-	buf[1] = 0;
-	buf[2] = 0;
-	buf[3] = (reg & 0xff00) >> 8;
-	buf[4] = reg & 0xff;
+	BYTE buf[256] = {
+		(BYTE)* len,
+		0x00,
+		0x00,
+		(reg & 0xff00) >> 8,
+		reg & 0xff,
+	};
 
 	return it35_tx_bulk_msg(CMD_MEM_RD, buf, 5, data, len);
 }
@@ -934,47 +944,128 @@ int CIT35Specials::it35_mem_rd_reg(DWORD reg, BYTE* data)
 	return it35_mem_wr_regs(reg, data, 1);
 }
 
-int CIT35Specials::it35_i2c_wr_regs(i2c_info slaves, BYTE reg, BYTE* data, DWORD len)
-{
-	return it35_i2c_wr(slaves.bus, slaves.addr, reg, data, len);
-}
-
-int CIT35Specials::it35_i2c_wr_reg(i2c_info slaves, BYTE reg, BYTE data)
-{
-	BYTE temp = data;
-
-	return it35_i2c_wr_regs(slaves, reg, &temp, 1);
-}
-
-int CIT35Specials::it35_i2c_rd_regs(i2c_info slaves, BYTE reg, BYTE* data, DWORD len)
-{
-	it35_mem_wr_reg(0xf424, 1);
-
-	it35_i2c_wr(slaves.bus, slaves.addr, reg, NULL, 0);
-
-	it35_mem_wr_reg(0xf424, 0);
-
-	return it35_i2c_rd(slaves.bus, slaves.addr, data, &len);
-}
-
-int CIT35Specials::it35_i2c_rd_reg(i2c_info slaves, BYTE reg, BYTE* data)
-{
-	return it35_i2c_rd_regs(slaves, reg, data, 1);
-}
-
-int CIT35Specials::it35_i2c_set_reg_bits(i2c_info slaves, BYTE reg, BYTE data, BYTE mask)
+int CIT35Specials::it35_mem_set_reg_bits(DWORD reg, BYTE data, BYTE mask)
 {
 	int res;
 	BYTE rdata;
 
 	if (mask != 0xff) {
-		res = it35_i2c_rd_reg(slaves, reg, &rdata);
+		res = it35_mem_rd_reg(reg, &rdata);
 		if (res)
 			return res;
-		data = ((data & mask) | (rdata & (mask ^ 0xFF)));
+		data = ((data & mask) | (rdata & (mask ^ 0xff)));
 	}
 
-	return it35_i2c_wr_reg(slaves, reg, data);
+	return it35_mem_wr_reg(reg, data);
+}
+
+int CIT35Specials::it35_i2c_wr_regs(i2c_info slave, BYTE reg, BYTE* data, DWORD len)
+{
+	return it35_i2c_wr(slave.bus, slave.addr, reg, data, len);
+}
+
+int CIT35Specials::it35_i2c_wr_reg(i2c_info slave, BYTE reg, BYTE data)
+{
+	BYTE temp = data;
+
+	return it35_i2c_wr_regs(slave, reg, &temp, 1);
+}
+
+int CIT35Specials::it35_i2c_rd_regs(i2c_info slave, BYTE reg, BYTE* data, DWORD len)
+{
+	it35_mem_wr_reg(0xf424, 1);
+
+	it35_i2c_wr(slave.bus, slave.addr, reg, NULL, 0);
+
+	it35_mem_wr_reg(0xf424, 0);
+
+	return it35_i2c_rd(slave.bus, slave.addr, data, &len);
+}
+
+int CIT35Specials::it35_i2c_rd_reg(i2c_info slave, BYTE reg, BYTE* data)
+{
+	return it35_i2c_rd_regs(slave, reg, data, 1);
+}
+
+int CIT35Specials::it35_i2c_set_reg_bits(i2c_info slave, BYTE reg, BYTE data, BYTE mask)
+{
+	int res;
+	BYTE rdata;
+
+	if (mask != 0xff) {
+		res = it35_i2c_rd_reg(slave, reg, &rdata);
+		if (res)
+			return res;
+		data = ((data & mask) | (rdata & (mask ^ 0xff)));
+	}
+
+	return it35_i2c_wr_reg(slave, reg, data);
+}
+
+int CIT35Specials::it35_i2c_thru_wr_regs(i2c_thru_info slaves, BYTE reg, BYTE* data, DWORD len)
+{
+	if (len > 248)
+		return -1;
+
+	BYTE buf[256] = {
+		slaves.child << 1,
+		reg,
+	};
+	if (len)
+		memcpy(buf + 2, data, len);
+
+	return it35_i2c_wr_regs(slaves.Parent, 0xfe, buf, len + 2);
+}
+
+int CIT35Specials::it35_i2c_thru_wr_reg(i2c_thru_info slaves, BYTE reg, BYTE data)
+{
+	BYTE temp = data;
+
+	return it35_i2c_thru_wr_regs(slaves, reg, &temp, 1);
+}
+
+int CIT35Specials::it35_i2c_thru_rd_regs(i2c_thru_info slaves, BYTE reg, BYTE* data, DWORD len)
+{	
+	{
+		BYTE buf[256] = {
+			slaves.child << 1,
+			reg,
+		};
+		it35_i2c_wr_regs(slaves.Parent, 0xfe, buf, 2);
+	}
+
+	it35_mem_wr_reg(0xf424, 1);
+
+	{
+		BYTE buf[256] = {
+			(slaves.child << 1) | 0x01,
+		};
+		it35_i2c_wr_regs(slaves.Parent, 0xfe, buf, 1);
+	}
+
+	it35_mem_wr_reg(0xf424, 0);
+
+	return it35_i2c_rd(slaves.Parent.bus, slaves.Parent.addr, data, &len);
+}
+
+int CIT35Specials::it35_i2c_thru_rd_reg(i2c_thru_info slaves, BYTE reg, BYTE* data)
+{
+	return it35_i2c_thru_rd_regs(slaves, reg, data, 1);
+}
+
+int CIT35Specials::it35_i2c_thru_set_reg_bits(i2c_thru_info slaves, BYTE reg, BYTE data, BYTE mask)
+{
+	int res;
+	BYTE rdata;
+
+	if (mask != 0xff) {
+		res = it35_i2c_thru_rd_reg(slaves, reg, &rdata);
+		if (res)
+			return res;
+		data = ((data & mask) | (rdata & (mask ^ 0xff)));
+	}
+
+	return it35_i2c_thru_wr_reg(slaves, reg, data);
 }
 
 LockProc::LockProc(HANDLE* pHandle, DWORD dwMilliSeconds)

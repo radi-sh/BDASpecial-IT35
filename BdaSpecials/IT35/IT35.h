@@ -75,14 +75,19 @@ private:
 		BYTE addr;
 	};
 
-	struct i2c_slaves {
+	struct i2c_thru_info {
+		i2c_info Parent;
+		BYTE child;
+	};
+
+	struct i2c_slaves_cxd2856 {
 		i2c_info slvt;
 		i2c_info slvx;
 		i2c_info gate;
 	};
 
 	// PX-MLT5PEのI2CバスNo./アドレスのリスト
-	i2c_slaves m_aI2c_slaves_mlt5pe[5] = {
+	i2c_slaves_cxd2856 m_aI2c_slaves_mlt5pe[5] = {
 		{{0x03, 0x65}, {0x03, 0x67}, {0x03, 0x60}},		// tuner 0
 		{{0x01, 0x6c}, {0x01, 0x6e}, {0x01, 0x60}},		// tuner 1
 		{{0x01, 0x64}, {0x01, 0x66}, {0x01, 0x60}},		// tuner 2
@@ -112,11 +117,17 @@ private:
 	int it35_mem_wr_reg(DWORD reg, BYTE data);
 	int it35_mem_rd_regs(DWORD reg, BYTE* data, DWORD* len);
 	int it35_mem_rd_reg(DWORD reg, BYTE* data);
-	int it35_i2c_wr_regs(i2c_info slaves, BYTE reg, BYTE* data, DWORD len);
-	int it35_i2c_wr_reg(i2c_info slaves, BYTE reg, BYTE data);
-	int it35_i2c_rd_regs(i2c_info slaves, BYTE reg, BYTE* data, DWORD len);
-	int it35_i2c_rd_reg(i2c_info slaves, BYTE reg, BYTE* data);
-	int it35_i2c_set_reg_bits(i2c_info slaves, BYTE reg, BYTE data, BYTE mask);
+	int it35_mem_set_reg_bits(DWORD reg, BYTE data, BYTE mask);
+	int it35_i2c_wr_regs(i2c_info slave, BYTE reg, BYTE* data, DWORD len);
+	int it35_i2c_wr_reg(i2c_info slave, BYTE reg, BYTE data);
+	int it35_i2c_rd_regs(i2c_info slave, BYTE reg, BYTE* data, DWORD len);
+	int it35_i2c_rd_reg(i2c_info slave, BYTE reg, BYTE* data);
+	int it35_i2c_set_reg_bits(i2c_info slave, BYTE reg, BYTE data, BYTE mask);
+	int it35_i2c_thru_wr_regs(i2c_thru_info slaves, BYTE reg, BYTE* data, DWORD len);
+	int it35_i2c_thru_wr_reg(i2c_thru_info slaves, BYTE reg, BYTE data);
+	int it35_i2c_thru_rd_regs(i2c_thru_info slaves, BYTE reg, BYTE* data, DWORD len);
+	int it35_i2c_thru_rd_reg(i2c_thru_info slaves, BYTE reg, BYTE* data);
+	int it35_i2c_thru_set_reg_bits(i2c_thru_info slaves, BYTE reg, BYTE data, BYTE mask);
 };
 
 class LockProc {
