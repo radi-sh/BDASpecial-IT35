@@ -256,31 +256,6 @@ const HRESULT CIT35Specials::InitializeHook(void)
 	return S_OK;
 }
 
-const HRESULT CIT35Specials::Set22KHz(bool bActive)
-{
-	return E_NOINTERFACE;
-}
-
-const HRESULT CIT35Specials::Set22KHz(long nTone)
-{
-	return E_NOINTERFACE;
-}
-
-const HRESULT CIT35Specials::FinalizeHook(void)
-{
-	return S_OK;
-}
-
-const HRESULT CIT35Specials::GetSignalState(int *pnStrength, int *pnQuality, int *pnLock)
-{
-	return E_NOINTERFACE;
-}
-
-const HRESULT CIT35Specials::LockChannel(BYTE bySatellite, BOOL bHorizontal, unsigned long ulFrequency, BOOL bDvbS2)
-{
-	return E_NOINTERFACE;
-}
-
 const HRESULT CIT35Specials::LockChannel(const TuningParam *pTuningParam)
 {
 	static DWORD lastIsdbMode = -1;
@@ -539,12 +514,6 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam *pTuningParam)
 	return E_NOINTERFACE;
 }
 
-const HRESULT CIT35Specials::SetLNBPower(bool bActive)
-{
-	// égÇ¡ÇƒÇ»Ç¢ÇµÅAÇ‹ÇüÇ¢Ç¢Ç©
-	return E_NOINTERFACE;
-}
-
 const HRESULT CIT35Specials::ReadIniFile(const WCHAR *szIniFilePath)
 {
 	const std::map<const std::wstring, const int, std::less<>> mapPrivateSetTSID = {
@@ -593,24 +562,6 @@ const HRESULT CIT35Specials::ReadIniFile(const WCHAR *szIniFilePath)
 		}
 	}
 	return S_OK;
-}
-
-const HRESULT CIT35Specials::IsDecodingNeeded(BOOL *pbAns)
-{
-	if (pbAns)
-		*pbAns = FALSE;
-
-	return S_OK;
-}
-
-const HRESULT CIT35Specials::Decode(BYTE *pBuf, DWORD dwSize)
-{
-	return E_NOINTERFACE;
-}
-
-const HRESULT CIT35Specials::GetSignalStrength(float *fVal)
-{
-	return E_NOINTERFACE;
 }
 
 const HRESULT CIT35Specials::PreLockChannel(TuningParam *pTuningParam)
@@ -751,11 +702,6 @@ const HRESULT CIT35Specials::PostTuneRequest(const TuningParam * pTuningParam)
 
 	}
 
-	return S_OK;
-}
-
-const HRESULT CIT35Specials::PostLockChannel(const TuningParam *pTuningParam)
-{
 	return S_OK;
 }
 
