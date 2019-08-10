@@ -343,7 +343,7 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam* pTuningParam)
 				}
 
 				// Žü”g”‚Ì‘Ñˆæ• (MHz)‚ðÝ’è
-				long bw = pTuningParam->Modulation.BandWidth;
+				ULONG bw = pTuningParam->Modulation.BandWidth;
 				if (pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_S_TMCC && bw == -1L) {
 					bw = 9L;
 				}
