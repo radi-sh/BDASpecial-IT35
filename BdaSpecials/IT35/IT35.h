@@ -58,6 +58,11 @@ private:
 		CMD_1023 = 0x1023,
 	};
 
+	enum I2C_MASTER_RW {
+		I2C_MASTER_WRITE = 0x00,
+		I2C_MASTER_READ = 0x01,
+	};
+
 	struct i2c_info {
 		BYTE bus;
 		BYTE addr;
@@ -116,6 +121,11 @@ private:
 	int it35_i2c_thru_rd_regs(i2c_thru_info slaves, BYTE reg, BYTE* data, DWORD len);
 	int it35_i2c_thru_rd_reg(i2c_thru_info slaves, BYTE reg, BYTE* data);
 	int it35_i2c_thru_set_reg_bits(i2c_thru_info slaves, BYTE reg, BYTE data, BYTE mask);
+
+	static inline BYTE I2C_ADDR_DATA(BYTE addr, I2C_MASTER_RW rw)
+	{
+		return (BYTE)((addr << 1) | rw);
+	}
 };
 
 class LockProc {

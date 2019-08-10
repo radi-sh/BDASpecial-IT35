@@ -729,7 +729,7 @@ void CIT35Specials::it35_create_msg(WORD cmd, const BYTE* wbuf, DWORD wlen, BYTE
 
 	len = wlen + 4 + 2;
 
-	msg[0] = (BYTE)len - 1;
+	msg[0] = (len - 1) & 0xff;
 	msg[1] = cmd >> 8;
 	msg[2] = cmd & 0xff;
 	msg[3] = seq++;
@@ -815,9 +815,9 @@ int CIT35Specials::it35_i2c_wr(BYTE i2c_bus, BYTE i2c_addr, BYTE reg, BYTE* data
 		return -1;
 
 	BYTE buf[256] = {
-		(BYTE)len + 1,
+		(len + 1) & 0xff,
 		i2c_bus,
-		i2c_addr << 1,
+		I2C_ADDR_DATA(i2c_addr, I2C_MASTER_WRITE),
 		reg,
 	};
 	if (len)
@@ -832,9 +832,9 @@ int CIT35Specials::it35_i2c_rd(BYTE i2c_bus, BYTE i2c_addr, BYTE* data, DWORD* l
 		return -1;
 
 	BYTE buf[256] = {
-		(BYTE)* len,
+		(*len) & 0xff,
 		i2c_bus,
-		(i2c_addr << 1) | 0x01,
+		I2C_ADDR_DATA(i2c_addr, I2C_MASTER_READ),
 	};
 
 	return it35_tx_bulk_msg(CMD_GENERIC_I2C_RD, buf, 3, data, len);
@@ -846,7 +846,7 @@ int CIT35Specials::it35_mem_wr_regs(DWORD reg, BYTE* data, DWORD len)
 		return -1;
 
 	BYTE buf[256] = {
-		(BYTE)len,
+		len & 0xff,
 		0x00,
 		0x00,
 		(reg & 0xff00) >> 8,
@@ -870,7 +870,7 @@ int CIT35Specials::it35_mem_rd_regs(DWORD reg, BYTE* data, DWORD* len)
 		return -1;
 
 	BYTE buf[256] = {
-		(BYTE)* len,
+		(*len) & 0xff,
 		0x00,
 		0x00,
 		(reg & 0xff00) >> 8,
@@ -949,7 +949,7 @@ int CIT35Specials::it35_i2c_thru_wr_regs(i2c_thru_info slaves, BYTE reg, BYTE* d
 		return -1;
 
 	BYTE buf[256] = {
-		slaves.child << 1,
+		I2C_ADDR_DATA(slaves.child, I2C_MASTER_WRITE),
 		reg,
 	};
 	if (len)
@@ -969,7 +969,7 @@ int CIT35Specials::it35_i2c_thru_rd_regs(i2c_thru_info slaves, BYTE reg, BYTE* d
 {	
 	{
 		BYTE buf[256] = {
-			slaves.child << 1,
+			I2C_ADDR_DATA(slaves.child, I2C_MASTER_WRITE),
 			reg,
 		};
 		it35_i2c_wr_regs(slaves.Parent, 0xfe, buf, 2);
@@ -979,7 +979,7 @@ int CIT35Specials::it35_i2c_thru_rd_regs(i2c_thru_info slaves, BYTE reg, BYTE* d
 
 	{
 		BYTE buf[256] = {
-			(slaves.child << 1) | 0x01,
+			I2C_ADDR_DATA(slaves.child, I2C_MASTER_READ),
 		};
 		it35_i2c_wr_regs(slaves.Parent, 0xfe, buf, 1);
 	}
