@@ -30,7 +30,7 @@
 
 FILE *g_fpLog = NULL;
 
-HMODULE hMySelf;
+HMODULE CIT35Specials::m_hMySelf = NULL;
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
 {
@@ -40,7 +40,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 		::_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
 		// モジュールハンドル保存
-		hMySelf = hModule;
+		CIT35Specials::m_hMySelf = hModule;
 		break;
 
 	case DLL_PROCESS_DETACH:
@@ -58,7 +58,7 @@ __declspec(dllexport) IBdaSpecials * CreateBdaSpecials(CComPtr<IBaseFilter> pTun
 
 __declspec(dllexport) IBdaSpecials* CreateBdaSpecials2(CComPtr<IBaseFilter> pTunerDevice, CComPtr<IBaseFilter> pCaptureDevice, const WCHAR* szTunerDisplayName, const WCHAR* szTunerFriendlyName, const WCHAR* szCaptureDisplayName, const WCHAR* szCaptureFriendlyName)
 {
-	return new CIT35Specials(hMySelf, pTunerDevice, szTunerDisplayName);
+	return new CIT35Specials(pTunerDevice, szTunerDisplayName);
 }
 
 
@@ -70,7 +70,7 @@ __declspec(dllexport) HRESULT CheckAndInitTuner(IBaseFilter *pTunerDevice, const
 	if (IniFileAccess.ReadKeyB(L"IT35", L"DebugLog", FALSE)) {
 		// INIファイルのファイル名取得
 		// DebugLogのファイル名取得
-		SetDebugLog(common::GetModuleName(hMySelf) + L"log");
+		SetDebugLog(common::GetModuleName(CIT35Specials::m_hMySelf) + L"log");
 	}
 
 	return S_OK;
@@ -86,9 +86,8 @@ __declspec(dllexport) HRESULT CheckCapture(const WCHAR *szTunerDisplayName, cons
 	return E_FAIL;
 }
 
-CIT35Specials::CIT35Specials(HMODULE hMySelf, CComPtr<IBaseFilter> pTunerDevice, const WCHAR* szTunerDisplayName)
-	: m_hMySelf(hMySelf),
-	  m_pTunerDevice(pTunerDevice),
+CIT35Specials::CIT35Specials(CComPtr<IBaseFilter> pTunerDevice, const WCHAR* szTunerDisplayName)
+	: m_pTunerDevice(pTunerDevice),
 	  m_pIKsPropertySet(m_pTunerDevice),
 	  m_hSemaphore(NULL),
 	  m_sTunerGUID(szTunerDisplayName),
@@ -111,8 +110,6 @@ CIT35Specials::CIT35Specials(HMODULE hMySelf, CComPtr<IBaseFilter> pTunerDevice,
 
 CIT35Specials::~CIT35Specials()
 {
-	m_hMySelf = NULL;
-
 	SAFE_CLOSE_HANDLE(m_hSemaphore);
 	::DeleteCriticalSection(&m_CriticalSection);
 

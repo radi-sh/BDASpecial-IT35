@@ -5,7 +5,7 @@
 class CIT35Specials : public IBdaSpecials2b5
 {
 public:
-	CIT35Specials(HMODULE hMySelf, CComPtr<IBaseFilter> pTunerDevice, const WCHAR* szTunerDisplayName);
+	CIT35Specials(CComPtr<IBaseFilter> pTunerDevice, const WCHAR* szTunerDisplayName);
 	virtual ~CIT35Specials(void);
 
 	const HRESULT InitializeHook(void);
@@ -18,8 +18,9 @@ public:
 
 	virtual void Release(void);
 
+	static HMODULE m_hMySelf;
+
 private:
-	HMODULE m_hMySelf;
 	CComPtr<IBaseFilter> m_pTunerDevice;
 	CComQIPtr<IKsPropertySet> m_pIKsPropertySet;
 	CComPtr<IBDA_FrequencyFilter> m_pIBDA_FrequencyFilter;				// IBDA_FrequencyFilter (Input Pin, Node 0)
