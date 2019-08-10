@@ -32,7 +32,7 @@ FILE *g_fpLog = NULL;
 
 HMODULE CIT35Specials::m_hMySelf = NULL;
 
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID /*lpReserved*/)
 {
 	switch (ul_reason_for_call) {
 	case DLL_PROCESS_ATTACH:
@@ -51,18 +51,18 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
     return TRUE;
 }
 
-__declspec(dllexport) IBdaSpecials * CreateBdaSpecials(CComPtr<IBaseFilter> pTunerDevice)
+__declspec(dllexport) IBdaSpecials* CreateBdaSpecials(CComPtr<IBaseFilter> pTunerDevice)
 {
 	return NULL;
 }
 
-__declspec(dllexport) IBdaSpecials* CreateBdaSpecials2(CComPtr<IBaseFilter> pTunerDevice, CComPtr<IBaseFilter> pCaptureDevice, const WCHAR* szTunerDisplayName, const WCHAR* szTunerFriendlyName, const WCHAR* szCaptureDisplayName, const WCHAR* szCaptureFriendlyName)
+__declspec(dllexport) IBdaSpecials* CreateBdaSpecials2(CComPtr<IBaseFilter> pTunerDevice, CComPtr<IBaseFilter> pCaptureDevice, const WCHAR* szTunerDisplayName, const WCHAR* /*szTunerFriendlyName*/, const WCHAR* /*szCaptureDisplayName*/, const WCHAR* /*szCaptureFriendlyName*/)
 {
 	return new CIT35Specials(pTunerDevice, szTunerDisplayName);
 }
 
 
-__declspec(dllexport) HRESULT CheckAndInitTuner(IBaseFilter *pTunerDevice, const WCHAR *szDisplayName, const WCHAR *szFriendlyName, const WCHAR *szIniFilePath)
+__declspec(dllexport) HRESULT CheckAndInitTuner(IBaseFilter* /*pTunerDevice*/, const WCHAR* /*szDisplayName*/, const WCHAR* /*szFriendlyName*/, const WCHAR* szIniFilePath)
 {
 	CIniFileAccess IniFileAccess(szIniFilePath);
 
@@ -76,8 +76,8 @@ __declspec(dllexport) HRESULT CheckAndInitTuner(IBaseFilter *pTunerDevice, const
 	return S_OK;
 }
 
-__declspec(dllexport) HRESULT CheckCapture(const WCHAR *szTunerDisplayName, const WCHAR *szTunerFriendlyName,
-	const WCHAR *szCaptureDisplayName, const WCHAR *szCaptureFriendlyName, const WCHAR *szIniFilePath)
+__declspec(dllexport) HRESULT CheckCapture(const WCHAR* /*szTunerDisplayName*/, const WCHAR* /*szTunerFriendlyName*/,
+	const WCHAR* /*szCaptureDisplayName*/, const WCHAR* /*szCaptureFriendlyName*/, const WCHAR* /*szIniFilePath*/)
 {
 	// Ç±ÇÍÇ™åƒÇŒÇÍÇΩÇ∆Ç¢Ç§Ç±Ç∆ÇÕBondriver_BDA.iniÇÃê›íËÇ™Ç®Ç©ÇµÇ¢
 	OutputDebug(L"CheckCapture called.\n");
@@ -253,7 +253,7 @@ const HRESULT CIT35Specials::InitializeHook(void)
 	return S_OK;
 }
 
-const HRESULT CIT35Specials::LockChannel(const TuningParam *pTuningParam)
+const HRESULT CIT35Specials::LockChannel(const TuningParam* pTuningParam)
 {
 	static DWORD lastIsdbMode = -1;
 	static ModulationType lastModulationType = BDA_MOD_NOT_DEFINED;
@@ -511,7 +511,7 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam *pTuningParam)
 	return E_NOINTERFACE;
 }
 
-const HRESULT CIT35Specials::ReadIniFile(const WCHAR *szIniFilePath)
+const HRESULT CIT35Specials::ReadIniFile(const WCHAR* szIniFilePath)
 {
 	const std::map<const std::wstring, const int, std::less<>> mapPrivateSetTSID = {
 		{ L"NO",      enumPrivateSetTSID::ePrivateSetTSIDNone },
@@ -561,7 +561,7 @@ const HRESULT CIT35Specials::ReadIniFile(const WCHAR *szIniFilePath)
 	return S_OK;
 }
 
-const HRESULT CIT35Specials::PreLockChannel(TuningParam *pTuningParam)
+const HRESULT CIT35Specials::PreLockChannel(TuningParam* pTuningParam)
 {
 	if (m_nPrivateSetTSID == enumPrivateSetTSID::ePrivateSetTSIDSpecial)
 		return S_OK;
@@ -602,7 +602,7 @@ const HRESULT CIT35Specials::PreLockChannel(TuningParam *pTuningParam)
 	return S_OK;
 }
 
-const HRESULT CIT35Specials::PreTuneRequest(const TuningParam *pTuningParam, ITuneRequest *pITuneRequest)
+const HRESULT CIT35Specials::PreTuneRequest(const TuningParam* pTuningParam, ITuneRequest* /*pITuneRequest*/)
 {
 	static DWORD lastIsdbMode = -1;
 
@@ -645,7 +645,7 @@ const HRESULT CIT35Specials::PreTuneRequest(const TuningParam *pTuningParam, ITu
 	return S_OK;
 }
 
-const HRESULT CIT35Specials::PostTuneRequest(const TuningParam * pTuningParam)
+const HRESULT CIT35Specials::PostTuneRequest(const TuningParam* pTuningParam)
 {
 	if (m_nPrivateSetTSID == enumPrivateSetTSID::ePrivateSetTSIDSpecial)
 		return S_OK;
