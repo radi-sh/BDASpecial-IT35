@@ -93,9 +93,9 @@ CIT35Specials::CIT35Specials(CComPtr<IBaseFilter> pTunerDevice, const WCHAR* szT
 	  m_sTunerGUID(szTunerDisplayName),
 	  m_bRewriteIFFreq(TRUE),
 	  m_nPrivateSetTSID(enumPrivateSetTSID::ePrivateSetTSIDNone),
-	  m_nVID(-1),
-	  m_nPID(-1),
-	  m_nTunerID(-1),
+	  m_nVID(0xffffU),
+	  m_nPID(0xffffU),
+	  m_nTunerID(0xffffffffU),
 	  m_bLNBPowerON(FALSE),
 	  m_bDualModeISDB(FALSE),
 	  m_nSpecialLockConfirmTime(2000),
@@ -255,7 +255,7 @@ const HRESULT CIT35Specials::InitializeHook(void)
 
 const HRESULT CIT35Specials::LockChannel(const TuningParam* pTuningParam)
 {
-	static DWORD lastIsdbMode = -1;
+	static DWORD lastIsdbMode = 0;
 	static ModulationType lastModulationType = BDA_MOD_NOT_DEFINED;
 	static ULONG lastMultiplier = 0;
 	static ULONG lastBandWidth = 0;
@@ -279,7 +279,7 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam* pTuningParam)
 		BOOL failure = FALSE;
 		// Dual Mode ISDB Tunerの場合はデモジュレーターの復調Modeを設定
 		if (m_bDualModeISDB) {
-			DWORD isdbMode = -1;
+			DWORD isdbMode = 0;
 			switch (pTuningParam->Modulation.Modulation) {
 			case BDA_MOD_ISDB_T_TMCC:
 				isdbMode = PRIVATE_IO_CTL_FUNC_DEMOD_OFDM;
@@ -293,7 +293,7 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam* pTuningParam)
 				hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, isdbMode);
 				::LeaveCriticalSection(&m_CriticalSection);
 			}
-			if (lastIsdbMode == -1) {
+			if (lastIsdbMode == 0) {
 				SleepWithMessageLoop(500);
 			}
 			lastIsdbMode = isdbMode;
@@ -602,7 +602,7 @@ const HRESULT CIT35Specials::PreLockChannel(TuningParam* pTuningParam)
 
 const HRESULT CIT35Specials::PreTuneRequest(const TuningParam* pTuningParam, ITuneRequest* /*pITuneRequest*/)
 {
-	static DWORD lastIsdbMode = -1;
+	static DWORD lastIsdbMode = 0;
 
 	if (m_nPrivateSetTSID == enumPrivateSetTSID::ePrivateSetTSIDSpecial)
 		return S_OK;
@@ -614,7 +614,7 @@ const HRESULT CIT35Specials::PreTuneRequest(const TuningParam* pTuningParam, ITu
 
 	// Dual Mode ISDB Tunerの場合はデモジュレーターの復調Modeを設定
 	if (m_bDualModeISDB) {
-		DWORD isdbMode = -1;
+		DWORD isdbMode = 0;
 		switch (pTuningParam->Modulation.Modulation) {
 		case BDA_MOD_ISDB_T_TMCC:
 			isdbMode = PRIVATE_IO_CTL_FUNC_DEMOD_OFDM;
@@ -628,7 +628,7 @@ const HRESULT CIT35Specials::PreTuneRequest(const TuningParam* pTuningParam, ITu
 			hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, isdbMode);
 			::LeaveCriticalSection(&m_CriticalSection);
 		}
-		if (lastIsdbMode == -1) {
+		if (lastIsdbMode == 0) {
 			SleepWithMessageLoop(500);
 		}
 		lastIsdbMode = isdbMode;
