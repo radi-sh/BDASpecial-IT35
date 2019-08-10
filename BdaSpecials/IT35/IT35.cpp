@@ -568,14 +568,12 @@ const HRESULT CIT35Specials::PreLockChannel(TuningParam* pTuningParam)
 
 	if (pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_S_TMCC) {
 		// Žü”g”‚Ì‘Ñˆæ•‚ð9‚ÉÝ’è
-		long bw = pTuningParam->Modulation.BandWidth;
 		if (pTuningParam->Modulation.BandWidth == -1L) {
 			pTuningParam->Modulation.BandWidth = 9L;
 		}
 
 		// IFŽü”g”‚É•ÏŠ·
 		if (m_bRewriteIFFreq) {
-			long freq = pTuningParam->Frequency;
 			if (pTuningParam->Antenna.LNBSwitch != -1) {
 				if (pTuningParam->Frequency < pTuningParam->Antenna.LNBSwitch) {
 					if (pTuningParam->Frequency > pTuningParam->Antenna.LowOscillator && pTuningParam->Antenna.HighOscillator != -1)
