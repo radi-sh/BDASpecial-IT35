@@ -93,8 +93,7 @@ CIT35Specials::CIT35Specials(CComPtr<IBaseFilter> pTunerDevice, const WCHAR* szT
 	  m_sTunerGUID(szTunerDisplayName),
 	  m_bRewriteIFFreq(TRUE),
 	  m_nPrivateSetTSID(enumPrivateSetTSID::ePrivateSetTSIDNone),
-	  m_nVID(0xffffU),
-	  m_nPID(0xffffU),
+	  m_ProductID(PID_UNKNOWN),
 	  m_nTunerID(0xffffffffU),
 	  m_bLNBPowerON(FALSE),
 	  m_bDualModeISDB(FALSE),
@@ -199,8 +198,7 @@ const HRESULT CIT35Specials::InitializeHook(void)
 	}
 	else {
 		OutputDebug(L"  USB Ver=0x%04x, Vender ID=0x%04x, Product ID=0x%04x.\n", deviceInfo.USBVer, deviceInfo.VenderID, deviceInfo.ProductID);
-		m_nVID = deviceInfo.VenderID;
-		m_nPID = deviceInfo.ProductID;
+		m_ProductID = (enumProductID)((deviceInfo.VenderID << 16) | deviceInfo.ProductID);
 	}
 
 	if (FAILED(hr = it35_GetDriverInfo(m_pIKsPropertySet, &driverInfo))) {
@@ -397,7 +395,7 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam* pTuningParam)
 		}
 
 		::EnterCriticalSection(&m_CriticalSection);
-		if (m_bRewriteNominalRate && pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_T_TMCC && m_nVID == 0x0511 && m_nPID == 0x024e) {
+		if (m_bRewriteNominalRate && pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_T_TMCC && m_ProductID == PID_MLT5PE) {
 			i2c_info I2C_SLVT = m_aI2c_slaves_mlt5pe[m_nTunerID].slvt;
 			i2c_info I2C_SLVX = m_aI2c_slaves_mlt5pe[m_nTunerID].slvx;
 			i2c_info I2C_HELENE = m_aI2c_slaves_mlt5pe[m_nTunerID].gate;
@@ -451,7 +449,7 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam* pTuningParam)
 
 			BOOLEAN sl = 0;
 
-			if (m_bRewriteNominalRate && pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_T_TMCC && m_nVID == 0x0511 && m_nPID == 0x024e) {
+			if (m_bRewriteNominalRate && pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_T_TMCC && m_ProductID == PID_MLT5PE) {
 				i2c_info I2C_SLVT = m_aI2c_slaves_mlt5pe[m_nTunerID].slvt;
 
 				BYTE rdata = 0;
@@ -655,7 +653,7 @@ const HRESULT CIT35Specials::PostTuneRequest(const TuningParam* pTuningParam)
 
 	if (m_nPrivateSetTSID == enumPrivateSetTSID::ePrivateSetTSIDPostTR) {
 		::EnterCriticalSection(&m_CriticalSection);
-		if (m_bRewriteNominalRate && pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_T_TMCC && m_nVID == 0x0511 && m_nPID == 0x024e) {
+		if (m_bRewriteNominalRate && pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_T_TMCC && m_ProductID == PID_MLT5PE) {
 			i2c_info I2C_SLVT = m_aI2c_slaves_mlt5pe[m_nTunerID].slvt;
 			i2c_info I2C_SLVX = m_aI2c_slaves_mlt5pe[m_nTunerID].slvx;
 			i2c_info I2C_HELENE = m_aI2c_slaves_mlt5pe[m_nTunerID].gate;

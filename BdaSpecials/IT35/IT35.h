@@ -40,6 +40,18 @@ private:
 		ePrivateSetTSIDSpecial = 100,			// 全てのチューニング操作をLockChannelで行う
 	};
 
+	// USB Device Vender ID & Product ID
+	enum enumProductID {
+		PID_UNKNOWN =	-1,
+		PID_W3U4 =		0x0511083f,		// PLEX PX-W3U4
+		PID_Q3U4 =		0x0511084a,		// PLEX PX-Q3U4
+		PID_W3PE4 =		0x0511023f,		// PLEX	PX-W3PE4
+		PID_Q3PE4 =		0x0511024a,		// PLEX PX-Q3PE4
+		PID_1T1S =		0x0511004b,		// e-better DTV02-1T1S-U
+		PID_5T =		0x0511024d,		// e-better DTV02-5T-P
+		PID_MLT5PE =	0x0511024e,		// PLEX PX-MLT5PE
+	};
+
 	// IT9305E コマンド
 	enum USB_CMD {
 		CMD_MEM_RD = 0x00,
@@ -88,9 +100,8 @@ private:
 		{{0x03, 0x64}, {0x03, 0x66}, {0x03, 0x60}},		// tuner 4
 	};
 
-	WORD m_nVID;
-	WORD m_nPID;
-	DWORD m_nTunerID;
+	enumProductID m_ProductID;					// USB VID & PID
+	DWORD m_nTunerID;							// Tuner番号
 	BOOL m_bRewriteIFFreq;						// IF周波数で put_CarrierFrequency() を行う
 	enumPrivateSetTSID m_nPrivateSetTSID;		// 固有の Property set を使用してTSIDの書込みを行うモード
 	BOOL m_bLNBPowerON;							// LNB電源の供給をONする
