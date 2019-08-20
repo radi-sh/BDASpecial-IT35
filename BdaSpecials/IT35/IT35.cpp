@@ -419,7 +419,7 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam* pTuningParam)
 
 		// TSIDをSetする
 		if (pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_S_TMCC) {
-			hr = it35_PutISDBIoCtl(m_pIKsPropertySet, pTuningParam->TSID == 0 ? (DWORD)-1 : (DWORD)pTuningParam->TSID);
+			hr = it35_PutISDBIoCtl(m_pIKsPropertySet, pTuningParam->TSID == 0 ? (WORD)-1 : (WORD)pTuningParam->TSID);
 		}
 
 		// OneSegモードをSetする
@@ -495,7 +495,7 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam* pTuningParam)
 				// TSIDをSetする
 				if (pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_S_TMCC) {
 					::EnterCriticalSection(&m_CriticalSection);
-					hr = it35_PutISDBIoCtl(m_pIKsPropertySet, pTuningParam->TSID == 0 ? (DWORD)-1 : (DWORD)pTuningParam->TSID);
+					hr = it35_PutISDBIoCtl(m_pIKsPropertySet, pTuningParam->TSID == 0 ? (WORD)-1 : (WORD)pTuningParam->TSID);
 					::LeaveCriticalSection(&m_CriticalSection);
 				}
 			}
@@ -635,7 +635,7 @@ const HRESULT CIT35Specials::PreTuneRequest(const TuningParam* pTuningParam, ITu
 	// TSIDをSetする
 	if (m_nPrivateSetTSID == enumPrivateSetTSID::ePrivateSetTSIDPreTR && pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_S_TMCC) {
 		::EnterCriticalSection(&m_CriticalSection);
-		hr = it35_PutISDBIoCtl(m_pIKsPropertySet, pTuningParam->TSID == 0 ? (DWORD)-1 : (DWORD)pTuningParam->TSID);
+		hr = it35_PutISDBIoCtl(m_pIKsPropertySet, pTuningParam->TSID == 0 ? (WORD)-1 : (WORD)pTuningParam->TSID);
 		::LeaveCriticalSection(&m_CriticalSection);
 	}
 	return S_OK;
@@ -677,7 +677,7 @@ const HRESULT CIT35Specials::PostTuneRequest(const TuningParam* pTuningParam)
 
 		// TSIDをSetする
 		if (pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_S_TMCC) {
-			hr = it35_PutISDBIoCtl(m_pIKsPropertySet, pTuningParam->TSID == 0 ? (DWORD)-1 : (DWORD)pTuningParam->TSID);
+			hr = it35_PutISDBIoCtl(m_pIKsPropertySet, pTuningParam->TSID == 0 ? (WORD)-1 : (WORD)pTuningParam->TSID);
 		}
 
 		// OneSegモードをSetする

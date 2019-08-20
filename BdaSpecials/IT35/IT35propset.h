@@ -143,7 +143,7 @@ static constexpr GUID KSPROPSETID_DvbsIoCtl = { 0xf23fac2d, 0xe1af, 0x48e0,{ 0x8
 // DVB-S IO コントロール プロパティID
 enum KSPROPERTY_DVBS_IO_CTL {
 	KSPROPERTY_DVBS_IO_LNB_POWER = 0,					// get/set			MinProperty=24		MinData=1
-	KSPROPERTY_DVBS_IO_DiseqcLoad,						// set only			MinProperty=24		MinData=1
+	KSPROPERTY_DVBS_IO_DISEQC_LOAD,						// set only			MinProperty=24		MinData=1
 };
 
 // KSCATEGORY_BDA_NETWORK_TUNER Tuner filter, id:0
@@ -179,30 +179,30 @@ struct DrvDataDataSet {
 
 // 拡張 IO コントロール KSPROPERTY_EXT_IO_DEV_IO_CTL 用ファンクションコード
 enum DEV_IO_CTL_FUNC_CODE {
-	DEV_IO_CTL_FUNC_READ_OFDM_REG = 0,					// Read
+	DEV_IO_CTL_FUNC_READ_OFDM_REG = 0,					// Write/Read
 	DEV_IO_CTL_FUNC_WRITE_OFDM_REG,						// Write
-	DEV_IO_CTL_FUNC_READ_LINK_REG,						// Read
+	DEV_IO_CTL_FUNC_READ_LINK_REG,						// Write/Read
 	DEV_IO_CTL_FUNC_WRITE_LINK_REG,						// Write
 	DEV_IO_CTL_FUNC_AP_CTRL,							// Write
-	DEV_IO_CTL_FUNC_READ_RAW_IR = 7,					// Read
-	DEV_IO_CTL_FUNC_GET_UART_DATA = 10,					// Read
+	DEV_IO_CTL_FUNC_READ_RAW_IR = 7,					// Write/Read
+	DEV_IO_CTL_FUNC_GET_UART_DATA = 10,					// Write/Read
 	DEV_IO_CTL_FUNC_SENT_UART,							// Write
 	DEV_IO_CTL_FUNC_SET_UART_BAUDRATE,					// Write
-	DEV_IO_CTL_FUNC_CARD_DETECT,						// Read
-	DEV_IO_CTL_FUNC_GET_ATR,							// Read
+	DEV_IO_CTL_FUNC_CARD_DETECT,						// Write/Read
+	DEV_IO_CTL_FUNC_GET_ATR,							// Write/Read
 	DEV_IO_CTL_FUNC_AES_KEY,							// Write
 	DEV_IO_CTL_FUNC_AES_ENABLE,							// Write
 	DEV_IO_CTL_FUNC_RESET_SMART_CARD,					// Write
-	DEV_IO_CTL_FUNC_IS_UART_READY,						// Read
+	DEV_IO_CTL_FUNC_IS_UART_READY,						// Write/Read
 	DEV_IO_CTL_FUNC_SET_ONE_SEG,						// Write
-	DEV_IO_CTL_FUNC_GET_BOARD_INPUT_POWER = 25,			// Read
+	DEV_IO_CTL_FUNC_GET_BOARD_INPUT_POWER = 25,			// Write/Read
 	DEV_IO_CTL_FUNC_SET_DECRYP,							// Write
-	DEV_IO_CTL_FUNC_UNKNOWN99 = 99,						// Read
-	DEV_IO_CTL_FUNC_GET_RX_DEVICE_ID,					// Read
-	DEV_IO_CTL_FUNC_UNKNOWN101,							// Write
-	DEV_IO_CTL_FUNC_IT930X_EEPROM_READ = 300,			// Read
+	DEV_IO_CTL_FUNC_GET_RETURN_CHANNEL_PID = 99,		// Write/Read	
+	DEV_IO_CTL_FUNC_GET_RX_DEVICE_ID,					// Write/Read
+	DEV_IO_CTL_FUNC_STOP_CHECKING_RETURN_CHANNEL_PID,	// Write
+	DEV_IO_CTL_FUNC_IT930X_EEPROM_READ = 300,			// Write/Read
 	DEV_IO_CTL_FUNC_IT930X_EEPROM_WRITE,				// Write
-	DEV_IO_CTL_FUNC_READ_GPIO,							// Read
+	DEV_IO_CTL_FUNC_READ_GPIO,							// Write/Read
 	DEV_IO_CTL_FUNC_WRITE_GPIO,							// Write
 };
 
@@ -684,23 +684,6 @@ static inline HRESULT it35_GetBoardInputPower(IKsPropertySet *pIKsPropertySet, D
 }
 
 // 
-static inline HRESULT it35_Unk99(IKsPropertySet *pIKsPropertySet, BOOL *pbDetect)
-{
-	HRESULT hr = S_OK;
-	DWORD dwResult;
-	DevIoCtlDataSet dataset;
-
-	if (FAILED(hr = it35_GetDevIoCtl(pIKsPropertySet, TRUE, DEV_IO_CTL_FUNC_UNKNOWN99, &dwResult, &dataset))) {
-		return hr;
-	}
-
-	if (pbDetect)
-		*pbDetect = (BOOL)dataset.CardDetected;
-
-	return hr;
-}
-
-// 
 static inline HRESULT it35_GetRxDeviceId(IKsPropertySet *pIKsPropertySet, DWORD *pdwDevId)
 {
 	HRESULT hr = S_OK;
@@ -718,18 +701,18 @@ static inline HRESULT it35_GetRxDeviceId(IKsPropertySet *pIKsPropertySet, DWORD 
 }
 
 // 
-static inline HRESULT it35_Unk101(IKsPropertySet *pIKsPropertySet)
+static inline HRESULT it35_StopCheckingReturnChannelPid(IKsPropertySet *pIKsPropertySet)
 {
-	return it35_GetDevIoCtl(pIKsPropertySet, FALSE, DEV_IO_CTL_FUNC_UNKNOWN101, NULL, NULL);
+	return it35_GetDevIoCtl(pIKsPropertySet, FALSE, DEV_IO_CTL_FUNC_STOP_CHECKING_RETURN_CHANNEL_PID, NULL, NULL);
 }
 
 //
 // 拡張 IO コントロール KSPROPERTY_EXT_IO_ISDBT_IO_CTL 用関数
 //
 // TSID をセット
-static inline HRESULT it35_PutISDBIoCtl(IKsPropertySet *pIKsPropertySet, DWORD dwData)
+static inline HRESULT it35_PutISDBIoCtl(IKsPropertySet *pIKsPropertySet, WORD wData)
 {
-	return pIKsPropertySet->Set(KSPROPSETID_ExtIoCtl, KSPROPERTY_EXT_IO_ISDBT_IO_CTL, NULL, 0, &dwData, sizeof(dwData));
+	return pIKsPropertySet->Set(KSPROPSETID_ExtIoCtl, KSPROPERTY_EXT_IO_ISDBT_IO_CTL, NULL, 0, &wData, sizeof(wData));
 }
 
 //
