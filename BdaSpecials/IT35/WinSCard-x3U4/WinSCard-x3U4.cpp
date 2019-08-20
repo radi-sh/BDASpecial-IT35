@@ -313,7 +313,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID /*lpRese
 
 		// IFD側の最大受信可能ブロックサイズ
 		// 本来設定する必要は無いけどM系カードの不具合検証用として用意しておく
-		IFSD = IniFileAccess.ReadKeyI(L"IFSD", 254);
+		IFSD = (BYTE)IniFileAccess.ReadKeyI(L"IFSD", 254);
 	}
 		break;
 

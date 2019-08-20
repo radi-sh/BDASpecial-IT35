@@ -27,7 +27,7 @@ public:
 		SBLOCK_FUNCTION_WTX = 0xc3,
 		SBLOCK_RESPONSE = 0x20,
 	};
-	enum EDC_TYPES {
+	enum EDC_TYPES : BYTE {
 		EDC_TYPE_LRC = 0,
 		EDC_TYPE_CRC,
 	};
