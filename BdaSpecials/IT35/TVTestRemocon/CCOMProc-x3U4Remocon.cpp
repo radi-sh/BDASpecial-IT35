@@ -4,6 +4,9 @@
 
 #include <Windows.h>
 
+#include "DSFilterEnum.h"
+#include "WaitWithMsg.h"
+
 #include <DShow.h>
 
 // KSCATEGORY_...
@@ -15,8 +18,6 @@
 #include <bdatypes.h>
 #include <bdamedia.h>
 
-#include "DSFilterEnum.h"
-#include "WaitWithMsg.h"
 #include "IT35propset.h"
 
 CCOMProc::CCOMProc(void)
