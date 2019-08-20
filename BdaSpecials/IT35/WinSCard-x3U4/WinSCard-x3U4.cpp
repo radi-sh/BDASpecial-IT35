@@ -273,7 +273,7 @@ static BOOL ResetCard(void)
 	return TRUE;
 }
 
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
+BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID /*lpReserved*/)
 {
 	switch (ul_reason_for_call) {
 	case DLL_PROCESS_ATTACH:
@@ -337,7 +337,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 	return TRUE;
 }
 
-LONG WINAPI SCardConnectA_(SCARDCONTEXT hContext, LPCSTR szReader, DWORD dwShareMode, DWORD dwPreferredProtocols, LPSCARDHANDLE phCard, LPDWORD pdwActiveProtocol)
+LONG WINAPI SCardConnectA_(SCARDCONTEXT /*hContext*/, LPCSTR /*szReader*/, DWORD /*dwShareMode*/, DWORD /*dwPreferredProtocols*/, LPSCARDHANDLE phCard, LPDWORD pdwActiveProtocol)
 {
 	if (!l_pShMem) {
 		::EnterCriticalSection(&l_csInit);
@@ -368,7 +368,7 @@ LONG WINAPI SCardConnectA_(SCARDCONTEXT hContext, LPCSTR szReader, DWORD dwShare
 	return SCARD_S_SUCCESS;
 }
 
-LONG WINAPI SCardConnectW_(SCARDCONTEXT hContext, LPWSTR szReader, DWORD dwShareMode, DWORD dwPreferredProtocols, LPSCARDHANDLE phCard, LPDWORD pdwActiveProtocol)
+LONG WINAPI SCardConnectW_(SCARDCONTEXT /*hContext*/, LPWSTR /*szReader*/, DWORD /*dwShareMode*/, DWORD /*dwPreferredProtocols*/, LPSCARDHANDLE phCard, LPDWORD pdwActiveProtocol)
 {
 	if (!l_pShMem) {
 		::EnterCriticalSection(&l_csInit);
@@ -399,12 +399,12 @@ LONG WINAPI SCardConnectW_(SCARDCONTEXT hContext, LPWSTR szReader, DWORD dwShare
 	return SCARD_S_SUCCESS;
 }
 
-LONG WINAPI SCardDisconnect_(SCARDHANDLE hCard, DWORD dwDisposition)
+LONG WINAPI SCardDisconnect_(SCARDHANDLE /*hCard*/, DWORD /*dwDisposition*/)
 {
 	return SCARD_S_SUCCESS;
 }
 
-LONG WINAPI SCardEstablishContext_(DWORD dwScope, LPCVOID pvReserved1, LPCVOID pvReserved2, LPSCARDCONTEXT phContext)
+LONG WINAPI SCardEstablishContext_(DWORD /*dwScope*/, LPCVOID /*pvReserved1*/, LPCVOID /*pvReserved2*/, LPSCARDCONTEXT phContext)
 {
 	::EnterCriticalSection(&l_csInit);
 	l_dwEstablishedContext++;
@@ -416,19 +416,19 @@ LONG WINAPI SCardEstablishContext_(DWORD dwScope, LPCVOID pvReserved1, LPCVOID p
 	return SCARD_S_SUCCESS;
 }
 
-LONG WINAPI SCardFreeMemory_(SCARDCONTEXT hContext, LPCVOID pvMem)
+LONG WINAPI SCardFreeMemory_(SCARDCONTEXT /*hContext*/, LPCVOID /*pvMem*/)
 {
 	return SCARD_S_SUCCESS;
 }
 
-LONG WINAPI SCardGetStatusChangeA_(SCARDCONTEXT hContext, DWORD dwTimeout, LPSCARD_READERSTATEA rgReaderStates, DWORD cReaders)
+LONG WINAPI SCardGetStatusChangeA_(SCARDCONTEXT /*hContext*/, DWORD /*dwTimeout*/, LPSCARD_READERSTATEA rgReaderStates, DWORD /*cReaders*/)
 {
 	rgReaderStates->dwEventState = SCARD_STATE_PRESENT;
 
 	return SCARD_S_SUCCESS;
 }
 
-LONG WINAPI SCardGetStatusChangeW_(SCARDCONTEXT hContext, DWORD dwTimeout, LPSCARD_READERSTATEW rgReaderStates, DWORD cReaders)
+LONG WINAPI SCardGetStatusChangeW_(SCARDCONTEXT /*hContext*/, DWORD /*dwTimeout*/, LPSCARD_READERSTATEW rgReaderStates, DWORD /*cReaders*/)
 {
 	rgReaderStates->dwEventState = SCARD_STATE_PRESENT;
 
@@ -440,7 +440,7 @@ LONG WINAPI SCardIsValidContext_(SCARDCONTEXT hContext)
 	return hContext ? SCARD_S_SUCCESS : ERROR_INVALID_HANDLE;
 }
 
-LONG WINAPI SCardListReadersA_(SCARDCONTEXT hContext, LPCSTR mszGroups, LPSTR mszReaders, LPDWORD pcchReaders)
+LONG WINAPI SCardListReadersA_(SCARDCONTEXT /*hContext*/, LPCSTR /*mszGroups*/, LPSTR mszReaders, LPDWORD pcchReaders)
 {
 	if (pcchReaders) {
 		if (mszReaders) {
@@ -455,7 +455,7 @@ LONG WINAPI SCardListReadersA_(SCARDCONTEXT hContext, LPCSTR mszGroups, LPSTR ms
 	return SCARD_S_SUCCESS;
 }
 
-LONG WINAPI SCardListReadersW_(SCARDCONTEXT hContext, LPCWSTR mszGroups, LPWSTR mszReaders, LPDWORD pcchReaders)
+LONG WINAPI SCardListReadersW_(SCARDCONTEXT /*hContext*/, LPCWSTR /*mszGroups*/, LPWSTR mszReaders, LPDWORD pcchReaders)
 {
 	if (pcchReaders) {
 		if (mszReaders) {
@@ -470,7 +470,7 @@ LONG WINAPI SCardListReadersW_(SCARDCONTEXT hContext, LPCWSTR mszGroups, LPWSTR 
 	return SCARD_S_SUCCESS;
 }
 
-LONG WINAPI SCardReleaseContext_(SCARDCONTEXT hContext)
+LONG WINAPI SCardReleaseContext_(SCARDCONTEXT /*hContext*/)
 {
 	::EnterCriticalSection(&l_csInit);
 	if (l_dwEstablishedContext)
@@ -486,7 +486,7 @@ LONG WINAPI SCardReleaseContext_(SCARDCONTEXT hContext)
 	return SCARD_S_SUCCESS;
 }
 
-LONG WINAPI SCardStatusA_(SCARDHANDLE hCard, LPSTR szReaderNames, LPDWORD pcchReaderLen, LPDWORD pdwState, LPDWORD pdwProtocol, LPBYTE pbAtr, LPDWORD pcbAtrLen)
+LONG WINAPI SCardStatusA_(SCARDHANDLE /*hCard*/, LPSTR szReaderNames, LPDWORD pcchReaderLen, LPDWORD pdwState, LPDWORD pdwProtocol, LPBYTE pbAtr, LPDWORD pcbAtrLen)
 {
 	if (pcchReaderLen) {
 		if (szReaderNames) {
@@ -514,7 +514,7 @@ LONG WINAPI SCardStatusA_(SCARDHANDLE hCard, LPSTR szReaderNames, LPDWORD pcchRe
 	return SCARD_S_SUCCESS;
 }
 
-LONG WINAPI SCardStatusW_(SCARDHANDLE hCard, LPWSTR szReaderNames, LPDWORD pcchReaderLen, LPDWORD pdwState, LPDWORD pdwProtocol, LPBYTE pbAtr, LPDWORD pcbAtrLen)
+LONG WINAPI SCardStatusW_(SCARDHANDLE /*hCard*/, LPWSTR szReaderNames, LPDWORD pcchReaderLen, LPDWORD pdwState, LPDWORD pdwProtocol, LPBYTE pbAtr, LPDWORD pcbAtrLen)
 {
 	if (pcchReaderLen) {
 		if (szReaderNames) {
@@ -542,7 +542,7 @@ LONG WINAPI SCardStatusW_(SCARDHANDLE hCard, LPWSTR szReaderNames, LPDWORD pcchR
 	return SCARD_S_SUCCESS;
 }
 
-LONG WINAPI SCardTransmit_(SCARDHANDLE hCard, LPCSCARD_IO_REQUEST pioSendPci, LPCBYTE pbSendBuffer, DWORD cbSendLength, LPSCARD_IO_REQUEST pioRecvPci, LPBYTE pbRecvBuffer, LPDWORD pcbRecvLength)
+LONG WINAPI SCardTransmit_(SCARDHANDLE /*hCard*/, LPCSCARD_IO_REQUEST /*pioSendPci*/, LPCBYTE pbSendBuffer, DWORD cbSendLength, LPSCARD_IO_REQUEST /*pioRecvPci*/, LPBYTE pbRecvBuffer, LPDWORD pcbRecvLength)
 {
 	CComProtocolT1::COM_PROTOCOL_T1_ERROR_CODE r;
 	int retry = 0;
@@ -596,7 +596,7 @@ LONG WINAPI SCardTransmit_(SCARDHANDLE hCard, LPCSCARD_IO_REQUEST pioSendPci, LP
 	return SCARD_S_SUCCESS;
 }
 
-LONG WINAPI SCardReconnect_(SCARDHANDLE hCard, DWORD dwShareMode, DWORD dwPreferredProtocols, DWORD dwInitialization, LPDWORD pdwActiveProtocol)
+LONG WINAPI SCardReconnect_(SCARDHANDLE /*hCard*/, DWORD /*dwShareMode*/, DWORD /*dwPreferredProtocols*/, DWORD /*dwInitialization*/, LPDWORD pdwActiveProtocol)
 {
 	*pdwActiveProtocol = SCARD_PROTOCOL_T1;
 
@@ -613,7 +613,7 @@ void WINAPI SCardReleaseStartedEvent_(void)
 	return;
 }
 
-LONG WINAPI SCardCancel_(SCARDCONTEXT hContext)
+LONG WINAPI SCardCancel_(SCARDCONTEXT /*hContext*/)
 {
 	return SCARD_S_SUCCESS;
 }
