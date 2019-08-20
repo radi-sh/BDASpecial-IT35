@@ -5,7 +5,11 @@
 #include <windows.h>
 #include <tchar.h>
 #define TVTEST_PLUGIN_CLASS_IMPLEMENT
+
+#pragma warning (push)
+#pragma warning (disable: 4100)
 #include "TVTestPlugin.h"
+#pragma warning (pop)
 
 #include "common.h"
 #include "CCOMProc-x3U4Remocon.h"
@@ -224,7 +228,7 @@ void CRemocon::OnRemoconDown(DWORD Data, LPARAM pParam) {
 
 // イベントコールバック関数
 // 何かイベントが起きると呼ばれる
-LRESULT CALLBACK CRemocon::EventCallback(UINT Event,LPARAM lParam1,LPARAM lParam2,void *pClientData)
+LRESULT CALLBACK CRemocon::EventCallback(UINT Event, LPARAM lParam1, LPARAM /*lParam2*/, void *pClientData)
 {
 	CRemocon *pThis=static_cast<CRemocon*>(pClientData);
 
