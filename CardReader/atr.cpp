@@ -46,7 +46,7 @@ int CParseATR::Parse(BYTE *pBuf, BYTE Len)
 	if (!pBuf)
 		return -1;
 
-	if (Len = 0)
+	if (Len == 0)
 		return -1;
 
 	if (Len > 33)
@@ -68,7 +68,7 @@ int CParseATR::Parse(BYTE *pBuf, BYTE Len)
 	BOOL PresenseTD = TRUE;
 
 	while (PresenseTA || PresenseTB || PresenseTC || PresenseTD) {
-		if (Len = 0)
+		if (Len == 0)
 			return -1;
 
 		if (PresenseTA) {
