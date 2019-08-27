@@ -110,6 +110,10 @@ private:
 	unsigned int m_nSpecialLockSetTSIDInterval;	// BDASpecial固有のLockChannelを使用する場合のISDB-S Lock完了待ち時にTSIDの再セットを行うインターバル時間
 	BOOL m_bRewriteNominalRate;					// ISDB-T時、CXD2856にNominal Rateを再設定する
 	BYTE m_byNominalRate_List[5];				// ISDB-T時、CXD2856に設定するNominal Rate
+	DWORD m_nLastIsdbMode;						// 現在のISDBモード
+	ModulationType m_nLastModulationType;		// 現在の変調方式
+	ULONG m_nLastMultiplier;					// 現在の周波数逓倍
+	ULONG m_nLastBandWidth;						// 現在の帯域幅
 
 private:
 	WORD it35_checksum(const BYTE* buf, size_t len);

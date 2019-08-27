@@ -100,7 +100,11 @@ CIT35Specials::CIT35Specials(CComPtr<IBaseFilter> pTunerDevice, const WCHAR* szT
 	  m_nSpecialLockConfirmTime(2000),
 	  m_nSpecialLockSetTSIDInterval(100),
 	  m_bRewriteNominalRate(FALSE),
-	  m_byNominalRate_List()
+	  m_byNominalRate_List(),
+	  m_nLastIsdbMode(0),
+	  m_nLastModulationType(BDA_MOD_NOT_DEFINED),
+	  m_nLastMultiplier(0),
+	  m_nLastBandWidth(0)
 {
 	::InitializeCriticalSection(&m_CriticalSection);
 
@@ -253,11 +257,6 @@ const HRESULT CIT35Specials::InitializeHook(void)
 
 const HRESULT CIT35Specials::LockChannel(const TuningParam* pTuningParam)
 {
-	static DWORD lastIsdbMode = 0;
-	static ModulationType lastModulationType = BDA_MOD_NOT_DEFINED;
-	static ULONG lastMultiplier = 0;
-	static ULONG lastBandWidth = 0;
-
 	if (m_nPrivateSetTSID == enumPrivateSetTSID::ePrivateSetTSIDSpecial) {
 		if (m_pTunerDevice == NULL) {
 			return E_POINTER;
@@ -286,15 +285,15 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam* pTuningParam)
 				isdbMode = PRIVATE_IO_CTL_FUNC_DEMOD_PSK;
 				break;
 			}
-			if (isdbMode != lastIsdbMode) {
+			if (isdbMode != m_nLastIsdbMode) {
 				::EnterCriticalSection(&m_CriticalSection);
 				hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, isdbMode);
 				::LeaveCriticalSection(&m_CriticalSection);
 			}
-			if (lastIsdbMode == 0) {
+			if (m_nLastIsdbMode == 0) {
 				SleepWithMessageLoop(500);
 			}
-			lastIsdbMode = isdbMode;
+			m_nLastIsdbMode = isdbMode;
 		}
 
 		::EnterCriticalSection(&m_CriticalSection);
@@ -325,9 +324,9 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam* pTuningParam)
 			if (m_pIBDA_DigitalDemodulator) {
 				// 変調タイプを設定
 				eModulationType = pTuningParam->Modulation.Modulation;
-				if (lastModulationType != eModulationType) {
+				if (m_nLastModulationType != eModulationType) {
 					m_pIBDA_DigitalDemodulator->put_ModulationType(&eModulationType);
-					lastModulationType = eModulationType;
+					m_nLastModulationType = eModulationType;
 				}
 			}
 
@@ -335,9 +334,9 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam* pTuningParam)
 			if (m_pIBDA_FrequencyFilter) {
 				// 周波数の単位(Hz)を設定
 				ULONG Multiplier = 1000UL;
-				if (lastMultiplier != Multiplier) {
+				if (m_nLastMultiplier != Multiplier) {
 					m_pIBDA_FrequencyFilter->put_FrequencyMultiplier(Multiplier);
-					lastMultiplier = Multiplier;
+					m_nLastMultiplier = Multiplier;
 				}
 
 				// 周波数の帯域幅 (MHz)を設定
@@ -345,9 +344,9 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam* pTuningParam)
 				if (pTuningParam->Modulation.Modulation == BDA_MOD_ISDB_S_TMCC && bw == -1L) {
 					bw = 9L;
 				}
-				if (lastBandWidth != bw) {
+				if (m_nLastBandWidth != bw) {
 					m_pIBDA_FrequencyFilter->put_Bandwidth(bw);
-					lastBandWidth = bw;
+					m_nLastBandWidth = bw;
 				}
 
 				// RF 信号の周波数を設定
@@ -600,8 +599,6 @@ const HRESULT CIT35Specials::PreLockChannel(TuningParam* pTuningParam)
 
 const HRESULT CIT35Specials::PreTuneRequest(const TuningParam* pTuningParam, ITuneRequest* /*pITuneRequest*/)
 {
-	static DWORD lastIsdbMode = 0;
-
 	if (m_nPrivateSetTSID == enumPrivateSetTSID::ePrivateSetTSIDSpecial)
 		return S_OK;
 
@@ -621,15 +618,15 @@ const HRESULT CIT35Specials::PreTuneRequest(const TuningParam* pTuningParam, ITu
 			isdbMode = PRIVATE_IO_CTL_FUNC_DEMOD_PSK;
 			break;
 		}
-		if (isdbMode != lastIsdbMode) {
+		if (isdbMode != m_nLastIsdbMode) {
 			::EnterCriticalSection(&m_CriticalSection);
 			hr = it35_DigibestPrivateIoControl(m_pIKsPropertySet, isdbMode);
 			::LeaveCriticalSection(&m_CriticalSection);
 		}
-		if (lastIsdbMode == 0) {
+		if (m_nLastIsdbMode == 0) {
 			SleepWithMessageLoop(500);
 		}
-		lastIsdbMode = isdbMode;
+		m_nLastIsdbMode = isdbMode;
 	}
 
 	// TSIDをSetする
