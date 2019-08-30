@@ -209,15 +209,14 @@ const HRESULT CIT35Specials::InitializeHook(void)
 		OutputDebug(L"Fail to get driver info.\n");
 	}
 	else {
-		OutputDebug(L"  Driver Ver=0x%08x, Driver Ver2=0x%08x.\n", driverInfo.DriverVer, driverInfo.DriverVer2);
+		OutputDebug(L"  driverVersion=0x%08x, cmdVersion=0x%08x.\n", driverInfo.DriverVer, driverInfo.DriverVer2);
 	}
 
 	if (FAILED(hr = it35_GetDriverData(m_pIKsPropertySet, &drvData))) {
 		OutputDebug(L"Fail to get driver data.\n");
 	}
 	else {
-		OutputDebug(L"  Driver PID=0x%08x, Driver Version=0x%08x, Tuner ID=0x%08x.\n",
-			drvData.DriverInfo.DriverPID, drvData.DriverInfo.DriverVersion, drvData.DriverInfo.TunerID);
+		OutputDebug(L"  driverPID=0x%08x, driverVersion=0x%08x, tunerID=0x%08x.\n", drvData.DriverInfo.DriverPID, drvData.DriverInfo.DriverVersion, drvData.DriverInfo.TunerID);
 		m_nTunerID = drvData.DriverInfo.TunerID;
 	}
 
