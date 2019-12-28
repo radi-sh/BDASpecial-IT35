@@ -285,13 +285,13 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID /*lpRese
 		::InitializeCriticalSection(&l_csInit);
 		// iniファイルのpath取得
 		std::wstring tempPath = common::GetModuleName(l_hModule);
-		CIniFileAccess IniFileAccess(tempPath + L"ini");
+		CIniFileAccess IniFileAccess((tempPath + L"ini").c_str());
 		IniFileAccess.SetSectionName(L"SCard");
 
 		// tunerのFriendlyName取得
 		std::wstring name, dip;
 		name = IniFileAccess.ReadKeyS(L"TunerFriendlyName", L"PXW3U4 Multi Tuner ISDB-T BDA Filter #0");
-		name = IniFileAccess.ReadKeyS(L"FriendlyName", name);
+		name = IniFileAccess.ReadKeyS(L"FriendlyName", name.c_str());
 		// tunerのデバイスインスタンスパス取得
 		dip = IniFileAccess.ReadKeyS(L"TunerInstancePath", L"");
 		COMProc.SetTunerFriendlyName(name, dip);
