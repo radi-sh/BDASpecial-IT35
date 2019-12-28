@@ -18,8 +18,6 @@
 // コントローラ名
 #define X3U4_REMOCON_NAME L"PX-x3U4 Remocon"
 
-FILE *g_fpLog = NULL;
-
 // ボタンのリスト
 static const struct {
 	TVTest::ControllerButtonInfo Info;
