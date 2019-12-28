@@ -507,7 +507,7 @@ const HRESULT CIT35Specials::LockChannel(const TuningParam* pTuningParam)
 
 const HRESULT CIT35Specials::ReadIniFile(const WCHAR* szIniFilePath)
 {
-	const std::map<const std::wstring, const int, std::less<>> mapPrivateSetTSID = {
+	const CIniFileAccess::Map mapPrivateSetTSID = {
 		{ L"NO",      enumPrivateSetTSID::ePrivateSetTSIDNone },
 		{ L"YES",     enumPrivateSetTSID::ePrivateSetTSIDPreTR },
 		{ L"PRETR",   enumPrivateSetTSID::ePrivateSetTSIDPreTR },
@@ -522,7 +522,7 @@ const HRESULT CIT35Specials::ReadIniFile(const WCHAR* szIniFilePath)
 	m_bRewriteIFFreq = IniFileAccess.ReadKeyB(L"RewriteIFFreq", m_bRewriteIFFreq);
 
 	// 固有の Property set を使用してTSIDの書込みを行うモード
-	m_nPrivateSetTSID = (enumPrivateSetTSID)IniFileAccess.ReadKeyIValueMap(L"PrivateSetTSID", enumPrivateSetTSID::ePrivateSetTSIDNone, mapPrivateSetTSID);
+	m_nPrivateSetTSID = (enumPrivateSetTSID)IniFileAccess.ReadKeyIValueMap(L"PrivateSetTSID", enumPrivateSetTSID::ePrivateSetTSIDNone, &mapPrivateSetTSID);
 
 	// LNB電源の供給をONする
 	m_bLNBPowerON = IniFileAccess.ReadKeyB(L"LNBPowerON", FALSE);
