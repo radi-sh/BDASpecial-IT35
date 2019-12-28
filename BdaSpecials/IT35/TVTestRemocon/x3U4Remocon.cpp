@@ -157,13 +157,13 @@ bool CRemocon::InitializePlugin()
 	if (!m_fInitialized) {
 		// iniファイルのpath取得
 		std::wstring tempPath = common::GetModuleName(g_hinstDLL);
-		CIniFileAccess IniFileAccess(tempPath + L"ini");
+		CIniFileAccess IniFileAccess((tempPath + L"ini").c_str());
 		IniFileAccess.SetSectionName(L"Generic");
 
 		// tunerのFriendlyName取得
 		std::wstring name, dip;
 		name = IniFileAccess.ReadKeyS(L"TunerFriendlyName", L"PXW3U4 Multi Tuner ISDB-T BDA Filter #0");
-		name = IniFileAccess.ReadKeyS(L"FriendlyName", name);
+		name = IniFileAccess.ReadKeyS(L"FriendlyName", name.c_str());
 		// tunerのデバイスインスタンスパス取得
 		dip = IniFileAccess.ReadKeyS(L"TunerInstancePath", L"");
 		COMProc.SetTunerFriendlyName(name, dip);
