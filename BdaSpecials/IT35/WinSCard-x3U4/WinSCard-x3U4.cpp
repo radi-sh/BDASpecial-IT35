@@ -16,8 +16,6 @@
 #include "CCOMProc-x3U4.h"
 #include "CIniFileAccess.h"
 
-FILE *g_fpLog = NULL;
-
 static constexpr SCARDHANDLE DUMMY_SCARDHANDLE = 0x5ca2d4a1;
 static constexpr SCARDCONTEXT DUMMY_SCARDCONTEXT = 0xc013e103;
 static constexpr CHAR READER_NAME_A[] = "Plex PX-x3U4 Card Reader 0";
