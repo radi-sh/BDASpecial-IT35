@@ -1,13 +1,9 @@
-#include "common.h"
-
-#include "CCOMProc-x3U4Remocon.h"
-
 #include <Windows.h>
 
-#include "DSFilterEnum.h"
-#include "WaitWithMsg.h"
-
 #include <DShow.h>
+
+// IBDA_Topology
+#include <bdaiface.h>
 
 // KSCATEGORY_...
 #include <ks.h>
@@ -17,6 +13,13 @@
 #pragma warning (pop)
 #include <bdatypes.h>
 #include <bdamedia.h>
+
+#include "common.h"
+
+#include "CCOMProc-x3U4Remocon.h"
+
+#include "DSFilterEnum.h"
+#include "WaitWithMsg.h"
 
 #include "IT35propset.h"
 
