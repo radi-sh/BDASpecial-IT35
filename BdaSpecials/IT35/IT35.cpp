@@ -837,19 +837,20 @@ int CIT35Specials::it35_i2c_rd(BYTE i2c_bus, BYTE i2c_addr, BYTE* data, DWORD* l
 
 int CIT35Specials::it35_mem_wr_regs(DWORD reg, BYTE* data, DWORD len)
 {
-	if (len > 245)
+	if (len > 244)
 		return -1;
 
 	BYTE buf[256] = {
 		len & 0xff,
+		(reg & 0xff00) ? 0x02U : 0x01U,
 		0x00,
 		0x00,
 		(reg & 0xff00) >> 8,
 		reg & 0xff,
 	};
-	memcpy(buf + 5, data, len);
+	memcpy(buf + 6, data, len);
 
-	return it35_tx_bulk_msg(CMD_MEM_WR, buf, len + 5, NULL, NULL);
+	return it35_tx_bulk_msg(CMD_MEM_WR, buf, len + 6, NULL, NULL);
 }
 
 int CIT35Specials::it35_mem_wr_reg(DWORD reg, BYTE data)
@@ -866,13 +867,14 @@ int CIT35Specials::it35_mem_rd_regs(DWORD reg, BYTE* data, DWORD* len)
 
 	BYTE buf[256] = {
 		(*len) & 0xff,
+		(reg & 0xff00) ? 0x02U : 0x01U,
 		0x00,
 		0x00,
 		(reg & 0xff00) >> 8,
 		reg & 0xff,
 	};
 
-	return it35_tx_bulk_msg(CMD_MEM_RD, buf, 5, data, len);
+	return it35_tx_bulk_msg(CMD_MEM_RD, buf, 6, data, len);
 }
 
 int CIT35Specials::it35_mem_rd_reg(DWORD reg, BYTE* data)
