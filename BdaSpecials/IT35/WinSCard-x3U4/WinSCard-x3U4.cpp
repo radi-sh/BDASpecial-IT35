@@ -62,8 +62,8 @@ static void CloseAllHandle(void) {
 	return;
 }
 
-static void ProcATR(BYTE *atr) {
-	ParseATR.Parse(atr, sizeof(atr));
+static void ProcATR(BYTE *atr, BYTE len) {
+	ParseATR.Parse(atr, len);
 	Protocol.SetCardIFSC(ParseATR.ParsedInfo.IFSC);
 	Protocol.SetEDCType(ParseATR.ParsedInfo.ErrorDetection == CParseATR::ERROR_DETECTION_CRC ? CComProtocolT1::EDC_TYPE_CRC : CComProtocolT1::EDC_TYPE_LRC);
 	Protocol.SetNodeAddress(0, 0);
@@ -122,7 +122,7 @@ static BOOL InitDevice(void) {
 		}
 
 		if (l_pShMem->ATRLength > 2 && l_pShMem->ATR[0] == CParseATR::CONVENTION_DIRECT) {
-			ProcATR(l_pShMem->ATR);
+			ProcATR(l_pShMem->ATR, sizeof(l_pShMem->ATR));
 			OutputDebug(L"InitDevice: ATR was read from shared memory.\n");
 		}
 
@@ -192,7 +192,7 @@ static BOOL ResetCard(void)
 			}
 
 			// ATR ‰ðÍ
-			ProcATR(atrbuf);
+			ProcATR(atrbuf, sizeof(atrbuf));
 			memcpy(l_pShMem->ATR, ParseATR.RawData, ParseATR.RawDataLength);
 			l_pShMem->ATRLength = ParseATR.RawDataLength;
 
